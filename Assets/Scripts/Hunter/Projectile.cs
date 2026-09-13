@@ -48,6 +48,14 @@ public sealed class Projectile : MonoBehaviourPun
         if (!IsLocalProjectile)
             return;
 
+        PropVisual prop =
+            collision.collider.GetComponentInParent<PropVisual>();
+
+        if (prop != null)
+        {
+            prop.RequestElimination();
+        }
+
         DestroyProjectile();
     }
 

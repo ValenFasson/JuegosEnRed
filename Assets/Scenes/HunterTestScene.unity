@@ -1025,6 +1025,38 @@ PrefabInstance:
       propertyPath: m_Name
       value: Hunter
       objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.31
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.45061147
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.46280804
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.5469542
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.5325403
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1750434481470675380, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 99.527
+      objectReference: {fileID: 0}
     - target: {fileID: 1814739278427456816, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
       propertyPath: m_LocalPosition.x
       value: -4.21111
@@ -1064,6 +1096,10 @@ PrefabInstance:
     - target: {fileID: 1814739278427456816, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7482940490460858272, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+      propertyPath: sceneViewId
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

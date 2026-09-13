@@ -14,8 +14,7 @@ public sealed class NetworkPropController : MonoBehaviourPun
     [SerializeField] private float mouseSensitivity = 0.1f;
 
     [Header("Scaling")]
-    [SerializeField] private float scaleStep = 0.25f;
-    [SerializeField] private float scaleCooldown = 2f;
+    [SerializeField] private float scaleSpeed = 0.5f;
 
     private const float MaxLookAngle = 70f;
     private const float GroundCheckDistance = 0.15f;
@@ -32,7 +31,7 @@ public sealed class NetworkPropController : MonoBehaviourPun
 
     private bool jumpRequested;
     private bool canScale;
-    private float nextScaleTime;
+    private bool rotationLocked;
 
     private bool IsLocalPlayer
     {
@@ -79,7 +78,8 @@ public sealed class NetworkPropController : MonoBehaviourPun
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // Para poder probar el Prop en una escena sin sistema de partida.
+        // Para poder probar el prefab en una escena sin
+        // sistema de partida.
         if (!PhotonNetwork.InRoom)
         {
             canScale = true;
@@ -95,6 +95,7 @@ public sealed class NetworkPropController : MonoBehaviourPun
         ReadCameraInput();
         ReadJumpInput();
         ReadScaleInput();
+        ReadRotationLock();
     }
 
     private void FixedUpdate()
@@ -170,6 +171,28 @@ public sealed class NetworkPropController : MonoBehaviourPun
                 cameraYaw,
                 0f
             );
+
+        // Si la rotaci�n no est� bloqueada,
+        // el prop acompa�a horizontalmente a la c�mara.
+        if (!rotationLocked && propVisual != null)
+        {
+            propVisual.SetVisualRotation(
+                cameraYaw
+            );
+        }
+    }
+
+    private void ReadRotationLock()
+    {
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard == null)
+            return;
+
+        if (keyboard.rKey.wasPressedThisFrame)
+        {
+            rotationLocked = !rotationLocked;
+        }
     }
 
     private void ReadJumpInput()
@@ -187,10 +210,7 @@ public sealed class NetworkPropController : MonoBehaviourPun
 
     private void ReadScaleInput()
     {
-        if (!canScale)
-            return;
-
-        if (Time.time < nextScaleTime)
+        if (!canScale || propVisual == null)
             return;
 
         Keyboard keyboard = Keyboard.current;
@@ -198,25 +218,20 @@ public sealed class NetworkPropController : MonoBehaviourPun
         if (keyboard == null)
             return;
 
-        if (keyboard.qKey.wasPressedThisFrame)
+        // Mantener E para agrandar.
+        if (keyboard.eKey.isPressed)
         {
-            ChangeScale(-scaleStep);
+            propVisual.ChangeScale(
+                scaleSpeed * Time.deltaTime
+            );
         }
-        else if (keyboard.eKey.wasPressedThisFrame)
+        // Mantener Q para achicar.
+        else if (keyboard.qKey.isPressed)
         {
-            ChangeScale(scaleStep);
+            propVisual.ChangeScale(
+                -scaleSpeed * Time.deltaTime
+            );
         }
-    }
-
-    private void ChangeScale(float amount)
-    {
-        if (propVisual == null)
-            return;
-
-        propVisual.RequestScaleChange(amount);
-
-        nextScaleTime =
-            Time.time + scaleCooldown;
     }
 
     private void Move()
@@ -239,6 +254,12 @@ public sealed class NetworkPropController : MonoBehaviourPun
         Vector3 direction =
             forward * moveInput.y +
             right * moveInput.x;
+
+        direction =
+            Vector3.ClampMagnitude(
+                direction,
+                1f
+            );
 
         Vector3 movement =
             direction *
@@ -282,6 +303,8 @@ public sealed class NetworkPropController : MonoBehaviourPun
         );
     }
 
+    // El futuro sistema de partida usa esto.
+    // true durante escondite, false al terminar.
     public void SetCanScale(bool value)
     {
         canScale = value;
