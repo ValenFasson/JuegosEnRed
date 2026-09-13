@@ -1,4 +1,4 @@
-using System;
+/*using System;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
@@ -115,7 +115,7 @@ public sealed class TankGame : MonoBehaviourPunCallbacks
             $"{PhotonNetwork.CurrentRoom.PlayerCount}/{RequiredPlayers}"
         );
 
-        /*GenerateArena();*/
+        /*GenerateArena();
 
         if (IsGameStarted())
             SpawnLocalTank();
@@ -452,4 +452,4 @@ public sealed class TankGame : MonoBehaviourPunCallbacks
             }
         );
     }
-}
+}*/
