@@ -372,8 +372,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ef8c2e8991784a4f85b03e614dbe5b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TankGame
-  tankPrefab: {fileID: 6759401740427445887, guid: 2f553217ae28a484a8c073802d74046f, type: 3}
-  spawnPoint: {fileID: 1701481778}
 --- !u!4 &105918364
 Transform:
   m_ObjectHideFlags: 0
@@ -1129,7 +1127,6 @@ GameObject:
   - component: {fileID: 734492516}
   - component: {fileID: 734492515}
   - component: {fileID: 734492514}
-  - component: {fileID: 3100000000}
   - component: {fileID: 3100000001}
   - component: {fileID: 3100000002}
   m_Layer: 5
@@ -2397,7 +2394,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1f46ab70a84e34bbec18cd437d28b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buttonId: 0
 --- !u!1 &2200000010
 GameObject:
   m_ObjectHideFlags: 0
@@ -2523,20 +2519,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c1f46ab70a84e34bbec18cd437d28b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buttonId: 1
---- !u!114 &3100000000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 734492513}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7328cfb84ea14fb7904065cb8fa73d02, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gameVersion: 0.1
 --- !u!114 &3100000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2549,36 +2531,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b854b9465fa409ea40c46300387c214, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomBrowser: {fileID: 3100000000}
-  connectionTests: {fileID: 3100000002}
-  panelNavigation: {fileID: 0}
-  eventSystem: {fileID: 209086894}
+  roomManager: {fileID: 0}
   titleText: {fileID: 3100000010}
   statusText: {fileID: 3100000014}
-  noticesText: {fileID: 3100000028}
-  noticesScroll: {fileID: 3100000024}
   connectButton: {fileID: 3100000169}
-  connectionTestsButton: {fileID: 3100000047}
   lobbyPanel: {fileID: 3100000064}
   nicknameText: {fileID: 3100000070}
   nicknameInput: {fileID: 3100000083}
   renameButton: {fileID: 3100000088}
-  roomSlots: []
+  roomNameInput: {fileID: 0}
+  createRoomButton: {fileID: 0}
+  roomSlots:
+  - label: {fileID: 0}
+    joinButton: {fileID: 0}
+  - label: {fileID: 0}
+    joinButton: {fileID: 0}
+  - label: {fileID: 0}
+    joinButton: {fileID: 0}
+  - label: {fileID: 0}
+    joinButton: {fileID: 0}
   currentRoomPanel: {fileID: 3100000174}
   roomText: {fileID: 3100000180}
-  roleText: {fileID: 3100000184}
-  roundText: {fileID: 3100000188}
-  objectivesText: {fileID: 3100000192}
-  instructionText: {fileID: 3100000196}
-  recoveryText: {fileID: 3100000200}
-  resultText: {fileID: 3100000204}
-  configurationText: {fileID: 3100000208}
-  nextRoundButton: {fileID: 3100000213}
   leaveButton: {fileID: 3100000222}
-  mainScroll: {fileID: 3100000061}
-  diagnosticsToggle: {fileID: 3100000042}
-  diagnosticsPanel: {fileID: 3100000227}
-  diagnosticsText: {fileID: 3100000248}
 --- !u!114 &3100000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12457,7 +12431,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 3200000009}
   m_HandleRect: {fileID: 3200000007}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -12695,7 +12669,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 3200000018}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.685846
+  m_Size: 0.87317073
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

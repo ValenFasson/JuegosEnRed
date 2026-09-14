@@ -43,13 +43,17 @@ public sealed class Projectile : MonoBehaviourPun
         );
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter(
+        Collision collision)
     {
         if (!IsLocalProjectile)
             return;
 
         PropVisual prop =
-            collision.collider.GetComponentInParent<PropVisual>();
+            collision.collider
+                .GetComponentInParent<
+                    PropVisual
+                >();
 
         if (prop != null)
         {

@@ -1,8 +1,12 @@
-using System;
 using System.Collections.Generic;
 using Photon.Realtime;
 
-public enum PhotonFeedbackSeverity { Info, Warning, Error }
+public enum PhotonFeedbackSeverity
+{
+    Info,
+    Warning,
+    Error
+}
 
 public sealed class PhotonFeedbackNotice
 {
@@ -10,7 +14,10 @@ public sealed class PhotonFeedbackNotice
     public PhotonFeedbackSeverity Severity { get; }
     public double ExpiresAt { get; }
 
-    public PhotonFeedbackNotice(string message, PhotonFeedbackSeverity severity, double expiresAt)
+    public PhotonFeedbackNotice(
+        string message,
+        PhotonFeedbackSeverity severity,
+        double expiresAt)
     {
         Message = message;
         Severity = severity;
@@ -18,96 +25,150 @@ public sealed class PhotonFeedbackNotice
     }
 }
 
-// Local presentation only: never changes or replicates gameplay state.
 public sealed class PhotonFeedbackHistory
 {
     private const int Capacity = 5;
-    private readonly List<PhotonFeedbackNotice> notices = new List<PhotonFeedbackNotice>();
-    public IReadOnlyList<PhotonFeedbackNotice> Notices { get; }
 
-    public PhotonFeedbackHistory() => Notices = notices.AsReadOnly();
+    private readonly List<PhotonFeedbackNotice> notices =
+        new List<PhotonFeedbackNotice>();
 
-    public void Add(string message, PhotonFeedbackSeverity severity, double now)
+    public IReadOnlyList<PhotonFeedbackNotice> Notices =>
+        notices;
+
+    public void Add(
+        string message,
+        PhotonFeedbackSeverity severity,
+        double now)
     {
         if (string.IsNullOrWhiteSpace(message))
             return;
+
         Expire(now);
-        if (notices.Count == Capacity)
+
+        if (notices.Count >= Capacity)
+        {
             notices.RemoveAt(0);
-        notices.Add(new PhotonFeedbackNotice(message, severity,
-            now + (severity == PhotonFeedbackSeverity.Error ? 15d : 8d)));
+        }
+
+        double duration =
+            severity == PhotonFeedbackSeverity.Error
+                ? 15d
+                : 8d;
+
+        notices.Add(
+            new PhotonFeedbackNotice(
+                message,
+                severity,
+                now + duration
+            )
+        );
     }
 
     public void Expire(double now)
     {
-        for (int i = notices.Count - 1; i >= 0; i--)
+        for (int i = notices.Count - 1;
+             i >= 0;
+             i--)
+        {
             if (now >= notices[i].ExpiresAt)
+            {
                 notices.RemoveAt(i);
+            }
+        }
     }
-    public void Clear() => notices.Clear();
+
+    public void Clear()
+    {
+        notices.Clear();
+    }
 }
 
 public sealed class PhotonPlayerFeedback
 {
-    private readonly Dictionary<int, string> names = new Dictionary<int, string>();
-    private readonly Dictionary<int, PropHuntPlayerState> states = new Dictionary<int, PropHuntPlayerState>();
-    private readonly HashSet<int> announcedAbandonments = new HashSet<int>();
+    private readonly Dictionary<int, string> names =
+        new Dictionary<int, string>();
 
-    public void Remember(int actor, string nickname)
+    private readonly HashSet<int> eliminatedPlayers =
+        new HashSet<int>();
+
+    public void Remember(
+        int actorNumber,
+        string nickname)
     {
-        if (!string.IsNullOrWhiteSpace(nickname))
+        if (string.IsNullOrWhiteSpace(nickname))
+            return;
+
+        string cleanName =
+            nickname
+                .Replace('\n', ' ')
+                .Replace('\r', ' ')
+                .Replace('\t', ' ')
+                .Trim();
+
+        if (cleanName.Length > 32)
         {
-            string name = nickname.Replace('\n', ' ').Replace('\r', ' ').Replace('\t', ' ').Trim();
-            names[actor] = name.Length > 32 ? name.Substring(0, 32) : name;
+            cleanName =
+                cleanName.Substring(0, 32);
         }
+
+        names[actorNumber] = cleanName;
     }
 
-    public string Name(int actor) => names.TryGetValue(actor, out string name) ? name : $"Jugador {actor}";
-
-    public string Entered(int actor, string nickname, bool rejoined)
+    public string Name(int actorNumber)
     {
-        Remember(actor, nickname);
-        if (rejoined && states.TryGetValue(actor, out PropHuntPlayerState state) && state == PropHuntPlayerState.Abandoned)
-            return $"{Name(actor)} volvió a la sala, pero quedó fuera de esta ronda.";
-        return rejoined ? $"{Name(actor)} restableció la conexión." : $"{Name(actor)} entró a la sala.";
-    }
-
-    public string Left(int actor, string nickname, bool inactive)
-    {
-        Remember(actor, nickname);
-        if (!inactive)
-            return Abandoned(actor);
-        return announcedAbandonments.Contains(actor) ? null : $"{Name(actor)} perdió la conexión.";
-    }
-
-    public string ObserveState(int actor, PropHuntPlayerState state, bool announce)
-    {
-        bool unchanged = states.TryGetValue(actor, out PropHuntPlayerState previous) && previous == state;
-        states[actor] = state;
-        if (state == PropHuntPlayerState.Alive && !unchanged)
-            announcedAbandonments.Remove(actor);
-        if (!announce)
+        if (names.TryGetValue(
+            actorNumber,
+            out string playerName))
         {
-            if (state == PropHuntPlayerState.Abandoned)
-                announcedAbandonments.Add(actor);
-            return null;
+            return playerName;
         }
-        if (unchanged)
-            return null;
-        if (state == PropHuntPlayerState.Abandoned)
-            return Abandoned(actor);
-        return state == PropHuntPlayerState.Eliminated ? $"{Name(actor)} fue eliminado." : null;
+
+        return $"Jugador {actorNumber}";
     }
 
-    private string Abandoned(int actor) => announcedAbandonments.Add(actor)
-        ? $"{Name(actor)} abandonó la partida." : null;
+    public string Entered(
+        int actorNumber,
+        string nickname)
+    {
+        Remember(
+            actorNumber,
+            nickname
+        );
 
-    public void ResetRound() => states.Clear();
+        return $"{Name(actorNumber)} entró a la sala.";
+    }
+
+    public string Left(
+        int actorNumber,
+        string nickname)
+    {
+        Remember(
+            actorNumber,
+            nickname
+        );
+
+        return $"{Name(actorNumber)} abandonó la partida.";
+    }
+
+    public string Eliminated(
+        int actorNumber,
+        string nickname)
+    {
+        Remember(
+            actorNumber,
+            nickname
+        );
+
+        if (!eliminatedPlayers.Add(actorNumber))
+            return null;
+
+        return $"{Name(actorNumber)} fue eliminado.";
+    }
+
     public void Clear()
     {
         names.Clear();
-        states.Clear();
-        announcedAbandonments.Clear();
+        eliminatedPlayers.Clear();
     }
 }
 
@@ -117,66 +178,134 @@ public static class PhotonFeedbackText
     {
         switch (code)
         {
-            case ErrorCode.GameFull: return "La sala está llena. Elegí otra sala.";
-            case ErrorCode.GameClosed: return "La sala está cerrada. Elegí otra sala.";
-            case ErrorCode.GameDoesNotExist: return "La sala ya no existe. Volvé a seleccionar una sala.";
-            case ErrorCode.GameIdAlreadyExists: return "La sala ya existe. Intentá entrar nuevamente.";
-            case ErrorCode.JoinFailedWithRejoinerNotFound: return "Venció el plazo para recuperar tu lugar en la sala.";
-            case ErrorCode.JoinFailedFoundActiveJoiner: return "Tu usuario ya está conectado a esa sala.";
-            case ErrorCode.JoinFailedFoundInactiveJoiner: return "Tu lugar sigue reservado. Es necesario recuperar la sesión anterior.";
+            case ErrorCode.GameFull:
+                return "La sala está llena.";
+
+            case ErrorCode.GameClosed:
+                return "La sala está cerrada.";
+
+            case ErrorCode.GameDoesNotExist:
+                return "La sala ya no existe.";
+
+            case ErrorCode.GameIdAlreadyExists:
+                return "Ya existe una sala con ese nombre.";
+
             case ErrorCode.InvalidAuthentication:
-            case ErrorCode.CustomAuthenticationFailed: return "No se pudo validar la sesión.";
-            case ErrorCode.AuthenticationTicketExpired: return "Tu sesión expiró. Volvé a conectarte.";
-            case ErrorCode.MaxCcuReached: return "El servicio alcanzó su límite de jugadores conectados. Intentá más tarde.";
-            case ErrorCode.InvalidRegion: return "El servicio no está disponible en la región configurada.";
-            case ErrorCode.OperationLimitReached: return "Se enviaron demasiadas solicitudes. Esperá antes de intentar nuevamente.";
-            case ErrorCode.OperationNotAllowedInCurrentState: return "La conexión todavía no permite esa acción. Esperá e intentá nuevamente.";
-            default: return "No se pudo completar la solicitud de sala. Intentá nuevamente.";
+            case ErrorCode.CustomAuthenticationFailed:
+                return "No se pudo validar la conexión con Photon.";
+
+            case ErrorCode.AuthenticationTicketExpired:
+                return "La sesión de Photon expiró.";
+
+            case ErrorCode.MaxCcuReached:
+                return "Photon alcanzó el límite de jugadores conectados.";
+
+            case ErrorCode.InvalidRegion:
+                return "La región configurada no está disponible.";
+
+            case ErrorCode.OperationLimitReached:
+                return "Se enviaron demasiadas solicitudes.";
+
+            case ErrorCode.OperationNotAllowedInCurrentState:
+                return "Photon todavía no permite realizar esta acción.";
+
+            default:
+                return "No se pudo completar la solicitud de sala.";
         }
     }
 
-    public static string Disconnect(DisconnectCause cause)
+    public static string Disconnect(
+        DisconnectCause cause)
     {
         switch (cause)
         {
-            case DisconnectCause.InvalidAuthentication: return "No se pudo validar la configuración de conexión.";
-            case DisconnectCause.CustomAuthenticationFailed: return "No se pudo validar tu sesión.";
-            case DisconnectCause.AuthenticationTicketExpired: return "Tu sesión expiró. Volvé a conectarte.";
-            case DisconnectCause.MaxCcuReached: return "El servicio alcanzó su límite de jugadores conectados. Intentá más tarde.";
-            case DisconnectCause.InvalidRegion: return "El servicio no está disponible en la región configurada.";
-            case DisconnectCause.ServerAddressInvalid: return "La dirección del servidor no es válida.";
-            case DisconnectCause.DisconnectByOperationLimit: return "Se enviaron demasiadas solicitudes. Esperá antes de reconectar.";
-            case DisconnectCause.DisconnectByClientLogic:
-            case DisconnectCause.ApplicationQuit: return "Te desconectaste de Photon.";
+            case DisconnectCause.InvalidAuthentication:
+                return "No se pudo validar la configuración de Photon.";
+
+            case DisconnectCause.CustomAuthenticationFailed:
+                return "No se pudo validar la sesión.";
+
+            case DisconnectCause.AuthenticationTicketExpired:
+                return "La sesión de Photon expiró.";
+
+            case DisconnectCause.MaxCcuReached:
+                return "Photon alcanzó el límite de jugadores conectados.";
+
+            case DisconnectCause.InvalidRegion:
+                return "La región configurada no está disponible.";
+
+            case DisconnectCause.ServerAddressInvalid:
+                return "La dirección del servidor no es válida.";
+
             case DisconnectCause.ClientTimeout:
-            case DisconnectCause.ServerTimeout: return "Se perdió la conexión con el servidor. Revisá tu conexión e intentá nuevamente.";
+            case DisconnectCause.ServerTimeout:
+                return "Se perdió la conexión con el servidor.";
+
             case DisconnectCause.ExceptionOnConnect:
-            case DisconnectCause.DnsExceptionOnConnect: return "No se pudo contactar al servidor. Revisá tu conexión e intentá nuevamente.";
-            default: return "Se interrumpió la conexión con Photon. Intentá nuevamente.";
+            case DisconnectCause.DnsExceptionOnConnect:
+                return "No se pudo conectar con el servidor.";
+
+            case DisconnectCause.DisconnectByClientLogic:
+            case DisconnectCause.ApplicationQuit:
+                return "Te desconectaste de Photon.";
+
+            default:
+                return "Se interrumpió la conexión con Photon.";
         }
     }
 
-    public static string Phase(GamePhase phase)
+    public static string Phase(
+        GamePhase phase)
     {
         switch (phase)
         {
-            case GamePhase.Waiting: return "Esperando jugadores";
-            case GamePhase.Spawning: return "Preparando personajes";
-            case GamePhase.Playing: return "Partida en curso";
-            case GamePhase.Paused: return "Partida pausada: esperando al cazador";
-            case GamePhase.Finished: return "Ronda finalizada";
-            default: return "Preparando partida";
+            case GamePhase.Waiting:
+                return "Esperando jugadores";
+
+            case GamePhase.Hiding:
+                return "Los props se están escondiendo";
+
+            case GamePhase.Playing:
+                return "Partida en curso";
+
+            case GamePhase.Finished:
+                return "Partida finalizada";
+
+            default:
+                return "Preparando partida";
         }
     }
 
-    public static string Result(string winner, string reason)
+    public static string HidingCountdown(
+        int seconds)
     {
-        if (winner == "Hunter")
-            return "Ganó el cazador.";
-        if (winner == "Props")
-            return "Ganaron los props.";
-        if (reason == "HunterDisconnected")
-            return "Ronda cancelada: el cazador abandonó la partida.";
-        return "Ronda cancelada. Esperando la próxima ronda.";
+        return
+            "Los props se están escondiendo\n" +
+            $"Faltan {seconds} segundos para empezar";
+    }
+
+    public static string WaitingPlayers(
+        int currentPlayers)
+    {
+        return
+            $"Esperando jugadores: " +
+            $"{currentPlayers}/" +
+            $"{PropHuntRoundRules.RequiredPlayers}";
+    }
+
+    public static string Result(
+        GameWinner winner)
+    {
+        switch (winner)
+        {
+            case GameWinner.Hunter:
+                return "Ganó el Hunter.";
+
+            case GameWinner.Props:
+                return "Ganaron los Props.";
+
+            default:
+                return "Partida finalizada.";
+        }
     }
 }

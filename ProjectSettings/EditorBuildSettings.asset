@@ -6,8 +6,11 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/TankGame.unity
-    guid: 79bc63ce7d2c9e847b917968ee328c9c
+    path: Assets/Scenes/PropHuntGame/Lobby.unity
+    guid: 5f0deb5e3deef794f9b102e6e205d895
+  - enabled: 1
+    path: Assets/Scenes/PropHuntGame/Game.unity
+    guid: a329b07838a19dd4386be74fea419530
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

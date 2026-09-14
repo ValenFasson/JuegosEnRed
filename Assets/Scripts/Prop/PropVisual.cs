@@ -1,5 +1,7 @@
 using Photon.Pun;
 using UnityEngine;
+using Hashtable =
+    ExitGames.Client.Photon.Hashtable;
 
 public sealed class PropVisual : MonoBehaviourPun, IPunObservable
 {
@@ -214,7 +216,20 @@ public sealed class PropVisual : MonoBehaviourPun, IPunObservable
         if (!photonView.IsMine)
             return;
 
-        PhotonNetwork.Destroy(gameObject);
+        PhotonNetwork.LocalPlayer
+            .SetCustomProperties(
+                new Hashtable
+                {
+                {
+                    PropHuntGameManager.AliveKey,
+                    false
+                }
+                }
+            );
+
+        PhotonNetwork.Destroy(
+            gameObject
+        );
     }
 
     public void OnPhotonSerializeView(

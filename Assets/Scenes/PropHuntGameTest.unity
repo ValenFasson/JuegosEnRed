@@ -352,28 +352,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 105918364}
-  - component: {fileID: 105918363}
   m_Layer: 0
-  m_Name: TankGame
+  m_Name: PropHuntGame
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &105918363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 105918362}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ef8c2e8991784a4f85b03e614dbe5b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TankGame
-  tankPrefab: {fileID: 6759401740427445887, guid: 2f553217ae28a484a8c073802d74046f, type: 3}
-  spawnPoint: {fileID: 1701481778}
 --- !u!4 &105918364
 Transform:
   m_ObjectHideFlags: 0

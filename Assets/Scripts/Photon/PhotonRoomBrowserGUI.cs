@@ -1,255 +1,713 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public sealed class PhotonRoomBrowserGUI : MonoBehaviour
+public sealed class PhotonRoomBrowserGUI :
+    MonoBehaviourPunCallbacks
 {
-    [Header("Services")]
-    [SerializeField] private PhotonRoomBrowser roomBrowser;
-    [SerializeField] private PhotonConnectionTestPanel connectionTests;
-    [SerializeField] private PhotonCanvasPanels panelNavigation;
-    [SerializeField] private EventSystem eventSystem;
+    [Serializable]
+    private sealed class RoomSlotUI
+    {
+        public Text label;
+        public Button joinButton;
 
-    [Header("Status and Notices")]
+        [NonSerialized]
+        public string roomName;
+    }
+
+    [Header("Services")]
+    [SerializeField] private PropHuntRoomManager roomManager;
+
+    [Header("Status")]
     [SerializeField] private Text titleText;
     [SerializeField] private Text statusText;
-    [SerializeField] private Text noticesText;
-    [SerializeField] private ScrollRect noticesScroll;
     [SerializeField] private Button connectButton;
-    [SerializeField] private Button connectionTestsButton;
 
+    private float statusHoldUntil;
     [Header("Lobby")]
     [SerializeField] private GameObject lobbyPanel;
+
     [SerializeField] private Text nicknameText;
     [SerializeField] private InputField nicknameInput;
     [SerializeField] private Button renameButton;
-    [SerializeField] private RoomSlot[] roomSlots = new RoomSlot[0];
+
+    [SerializeField] private InputField roomNameInput;
+    [SerializeField] private Button createRoomButton;
+
+    [SerializeField]
+    private RoomSlotUI[] roomSlots =
+        new RoomSlotUI[0];
 
     [Header("Current Room")]
     [SerializeField] private GameObject currentRoomPanel;
+
     [SerializeField] private Text roomText;
-    [SerializeField] private Text roleText;
-    [SerializeField] private Text roundText;
-    [SerializeField] private Text objectivesText;
-    [SerializeField] private Text instructionText;
-    [SerializeField] private Text recoveryText;
-    [SerializeField] private Text resultText;
-    [SerializeField] private Text configurationText;
-    [SerializeField] private Button nextRoundButton;
     [SerializeField] private Button leaveButton;
-    [SerializeField] private ScrollRect mainScroll;
 
-    [Header("Diagnostics")]
-    [SerializeField] private Toggle diagnosticsToggle;
-    [SerializeField] private GameObject diagnosticsPanel;
-    [SerializeField] private Text diagnosticsText;
+    private float nextRefreshTime;
 
-    private double nextRefresh;
-    private bool originalNavigation;
-    private bool previousInRoom;
-
-    private void OnEnable()
+    private void Start()
     {
-        if (roomBrowser == null)
+        if (roomManager == null)
         {
-            Debug.LogError("Canvas: assign PhotonRoomBrowser in the Inspector.", this);
+            roomManager =
+                PropHuntRoomManager.Instance;
+        }
+
+        if (roomManager == null)
+        {
+            Debug.LogError(
+                "No se encontró PropHuntRoomManager.",
+                this
+            );
+
             enabled = false;
             return;
         }
-        if (HidesController(lobbyPanel) || HidesController(currentRoomPanel) || HidesController(diagnosticsPanel))
-        {
-            Debug.LogError("Canvas: the panels must be children of the object that contains the controllers.", this);
-            enabled = false;
-            return;
-        }
-        if (eventSystem != null)
-            originalNavigation = eventSystem.sendNavigationEvents;
-        roomBrowser.StatusChanged += Refresh;
-        roomBrowser.FeedbackChanged += RefreshNotices;
-        previousInRoom = PhotonNetwork.InRoom;
-        nextRefresh = 0d;
-        RefreshNotices();
+
+        EnsureNickname();
+
         Refresh();
-    }
-
-    private bool HidesController(GameObject panel) => panel != null && transform.IsChildOf(panel.transform);
-
-    private void OnDisable()
-    {
-        if (roomBrowser != null)
-        {
-            roomBrowser.StatusChanged -= Refresh;
-            roomBrowser.FeedbackChanged -= RefreshNotices;
-        }
-        if (eventSystem != null)
-            eventSystem.sendNavigationEvents = originalNavigation;
     }
 
     private void Update()
     {
-        // Counts, confirmed game properties and recovery timers have independent lifetimes.
-        if (Time.realtimeSinceStartupAsDouble >= nextRefresh)
+        if (Time.unscaledTime <
+            nextRefreshTime)
         {
-            nextRefresh = Time.realtimeSinceStartupAsDouble + 0.2d;
-            Refresh();
+            return;
         }
-        if (eventSystem != null)
-        {
-            bool testsOpen = connectionTests != null && connectionTests.Visible;
-            bool typing = nicknameInput != null && nicknameInput.isFocused;
-            bool navigation = testsOpen || typing || !PhotonNetwork.InRoom || PropHuntGame.Phase == GamePhase.Finished;
-            if (!navigation && eventSystem.sendNavigationEvents)
-                eventSystem.SetSelectedGameObject(null);
-            eventSystem.sendNavigationEvents = navigation;
-        }
+
+        nextRefreshTime =
+            Time.unscaledTime + 0.25f;
+
+        Refresh();
     }
 
-    public void Connect() => roomBrowser?.Connect();
-    public void JoinRoom(string roomName) => roomBrowser?.JoinOrCreateRoom(roomName);
-    public void LeaveRoom() => roomBrowser?.LeaveCurrentRoom();
-    public void PrepareNextRound() => PropHuntGame.Instance?.PrepareNextRound();
+    // --------------------------------------------------
+    // BOTONES UI
+    // --------------------------------------------------
 
-    public void ToggleConnectionTests()
+    public void Connect()
     {
-        if (panelNavigation != null)
-            panelNavigation.ToggleConnectionTests();
-        else if (connectionTests != null)
-            connectionTests.TogglePanel();
+        if (roomManager == null)
+            return;
+
+        SetStatus(
+            "Conectando con Photon..."
+        );
+
+        roomManager.Connect();
+    }
+
+    public void CreateRoom()
+    {
+        if (roomManager == null ||
+            roomNameInput == null)
+        {
+            return;
+        }
+
+        string roomName =
+            roomNameInput.text.Trim();
+
+        if (string.IsNullOrEmpty(roomName))
+        {
+            SetStatus(
+                "Escribí un nombre para la sala."
+            );
+
+            return;
+        }
+
+        SetStatus(
+            $"Creando sala '{roomName}'..."
+        );
+
+        roomManager.CreateRoom(
+            roomName
+        );
+    }
+
+    public void JoinRoom(string roomName)
+    {
+        if (roomManager == null)
+            return;
+
+        if (string.IsNullOrEmpty(roomName))
+            return;
+
+        SetStatus(
+            $"Entrando a '{roomName}'..."
+        );
+
+        roomManager.JoinRoom(
+            roomName
+        );
+    }
+
+    public void LeaveRoom()
+    {
+        if (roomManager == null)
+            return;
+
+        roomManager.LeaveRoom();
     }
 
     public void ChangeNickname()
     {
-        if (nicknameInput == null || roomBrowser == null || !roomBrowser.CanUseLobby)
+        if (nicknameInput == null)
             return;
-        string name = nicknameInput.text.Trim().Replace("\r", "").Replace("\n", "");
-        if (name.Length == 0)
+
+        string newName =
+            nicknameInput.text
+                .Trim()
+                .Replace("\n", "")
+                .Replace("\r", "");
+
+        if (string.IsNullOrEmpty(newName))
         {
-            roomBrowser.Notify("Escribí un nombre para tu jugador.", PhotonFeedbackSeverity.Warning);
+            SetStatus(
+                "Escribí un nombre para tu jugador."
+            );
+
             return;
         }
-        PhotonNetwork.NickName = name.Length > 32 ? name.Substring(0, 32) : name;
-        nicknameInput.SetTextWithoutNotify(PhotonNetwork.NickName);
+
+        if (newName.Length > 32)
+        {
+            newName =
+                newName.Substring(
+                    0,
+                    32
+                );
+        }
+
+        PhotonNetwork.NickName =
+            newName;
+
+        nicknameInput.SetTextWithoutNotify(
+            newName
+        );
+
         Refresh();
     }
 
+    // --------------------------------------------------
+    // PHOTON CALLBACKS
+    // --------------------------------------------------
+
+    public override void OnConnectedToMaster()
+    {
+        SetStatus(
+            "Conectado a Photon."
+        );
+
+        Refresh();
+    }
+
+    public override void OnJoinedLobby()
+    {
+        SetStatus(
+            "Lobby conectado. Elegí o creá una sala."
+        );
+
+        Refresh();
+    }
+
+    public override void OnJoinedRoom()
+    {
+        SetStatus(
+            "Entraste a la sala."
+        );
+
+        Refresh();
+    }
+
+    public override void OnLeftRoom()
+    {
+        SetStatus(
+            "Saliste de la sala."
+        );
+
+        Refresh();
+    }
+
+    public override void OnPlayerEnteredRoom(
+        Player newPlayer)
+    {
+        Refresh();
+    }
+
+    public override void OnPlayerLeftRoom(
+        Player otherPlayer)
+    {
+        Refresh();
+    }
+
+    public override void OnRoomListUpdate(
+        List<RoomInfo> roomList)
+    {
+        Refresh();
+    }
+
+    public override void OnJoinRoomFailed(
+        short returnCode,
+        string message)
+    {
+        SetTemporaryStatus(
+            PhotonFeedbackText.RoomError(
+                returnCode
+            )
+        );
+
+        Refresh();
+    }
+
+    public override void OnCreateRoomFailed(
+        short returnCode,
+        string message)
+    {
+        SetTemporaryStatus(
+            PhotonFeedbackText.RoomError(
+                returnCode
+            )
+        );
+
+        Refresh();
+    }
+
+    public override void OnDisconnected(
+       DisconnectCause cause)
+    {
+        SetTemporaryStatus(
+            PhotonFeedbackText.Disconnect(
+                cause
+            ),
+            6f
+        );
+
+        Refresh();
+    }
+
+    // --------------------------------------------------
+    // ACTUALIZAR UI
+    // --------------------------------------------------
+
     private void Refresh()
     {
-        if (roomBrowser == null)
-            return;
-        bool inRoom = PhotonNetwork.InRoom;
-        SetText(titleText, "Prop Hunt");
-        SetText(statusText, roomBrowser.StatusMessage);
-        if (statusText != null)
-            statusText.color = SeverityColor(roomBrowser.StatusSeverity);
-        SetActive(lobbyPanel, !inRoom);
-        SetActive(currentRoomPanel, inRoom);
-        SetText(nicknameText, "Jugador: " + PhotonNetwork.NickName);
-        SetInteractable(renameButton, roomBrowser.CanUseLobby);
+        SetText(
+            titleText,
+            "Prop Hunt"
+        );
+
+        bool inRoom =
+            PhotonNetwork.InRoom;
+
+        bool inLobby =
+            PhotonNetwork.InLobby;
+
+        SetActive(
+            lobbyPanel,
+            !inRoom
+        );
+
+        SetActive(
+            currentRoomPanel,
+            inRoom
+        );
+
+        SetText(
+            nicknameText,
+            $"Jugador: {PhotonNetwork.NickName}"
+        );
+
+        if (nicknameInput != null &&
+            !nicknameInput.isFocused)
+        {
+            nicknameInput.SetTextWithoutNotify(
+                PhotonNetwork.NickName
+            );
+        }
+
+        if (connectButton != null)
+        {
+            connectButton.interactable =
+                !PhotonNetwork.IsConnected;
+        }
+
+        if (renameButton != null)
+        {
+            renameButton.interactable =
+                inLobby;
+        }
+
         if (nicknameInput != null)
         {
-            nicknameInput.interactable = roomBrowser.CanUseLobby;
-            nicknameInput.characterLimit = 32;
-        }
-        SetInteractable(connectButton, !inRoom && !roomBrowser.IsRecovering && roomBrowser.ProcessState == PhotonProcessState.Disconnected);
-        SetInteractable(connectionTestsButton, connectionTests != null && connectionTests.isActiveAndEnabled && PhotonConnectionTestPanel.Available);
+            nicknameInput.interactable =
+                inLobby;
 
-        foreach (RoomSlot slot in roomSlots)
+            nicknameInput.characterLimit =
+                32;
+        }
+
+        if (roomNameInput != null)
         {
+            roomNameInput.interactable =
+                inLobby;
+        }
+
+        if (createRoomButton != null)
+        {
+            createRoomButton.interactable =
+                inLobby;
+        }
+
+        if (leaveButton != null)
+        {
+            leaveButton.interactable =
+                inRoom;
+        }
+
+        if (inLobby)
+        {
+            RefreshRoomList();
+        }
+
+        if (inRoom)
+        {
+            RefreshCurrentRoom();
+        }
+
+        RefreshConnectionStatus();
+    }
+
+    private void RefreshRoomList()
+    {
+        List<RoomInfo> availableRooms =
+            new List<RoomInfo>();
+
+        foreach (RoomInfo room in
+                 roomManager.Rooms)
+        {
+            if (room == null)
+                continue;
+
+            if (room.RemovedFromList)
+                continue;
+
+            availableRooms.Add(
+                room
+            );
+        }
+
+        availableRooms.Sort(
+            (a, b) =>
+                string.Compare(
+                    a.Name,
+                    b.Name,
+                    StringComparison.OrdinalIgnoreCase
+                )
+        );
+
+        for (int i = 0;
+             i < roomSlots.Length;
+             i++)
+        {
+            RoomSlotUI slot =
+                roomSlots[i];
+
             if (slot == null)
                 continue;
-            bool known = roomBrowser.TryGetRoomInfo(slot.roomName ?? "", out RoomInfo info);
-            bool allowedName = false;
-            foreach (string name in roomBrowser.RoomNames)
-                allowedName |= string.Equals(name, slot.roomName, StringComparison.OrdinalIgnoreCase);
-            bool enter = allowedName && roomBrowser.CanUseLobby && (!known ||
-                PropHuntRoundRules.CanEnterRoom(info.IsOpen, info.PlayerCount, info.MaxPlayers));
-            SetText(slot.label, known ? $"{slot.roomName} — {info.PlayerCount}/{info.MaxPlayers}" + (!info.IsOpen ? " — Cerrada" : info.PlayerCount >= info.MaxPlayers ? " — Llena" : "") : $"{slot.roomName} — 0/{roomBrowser.MaxPlayersPerRoom}");
-            SetInteractable(slot.joinButton, enter);
+
+            if (i >=
+                availableRooms.Count)
+            {
+                ClearRoomSlot(
+                    slot
+                );
+
+                continue;
+            }
+
+            RoomInfo info =
+                availableRooms[i];
+
+            SetupRoomSlot(
+                slot,
+                info
+            );
+        }
+    }
+
+    private void SetupRoomSlot(
+        RoomSlotUI slot,
+        RoomInfo info)
+    {
+        slot.roomName =
+            info.Name;
+
+        string state = "";
+
+        if (!info.IsOpen)
+        {
+            state = " - Cerrada";
+        }
+        else if (info.MaxPlayers > 0 &&
+                 info.PlayerCount >=
+                 info.MaxPlayers)
+        {
+            state = " - Llena";
         }
 
-        SetInteractable(leaveButton, inRoom && roomBrowser.ProcessState == PhotonProcessState.InRoom);
-        SetInteractable(nextRoundButton, inRoom && PhotonNetwork.IsMasterClient && PropHuntGame.Phase == GamePhase.Finished);
-        SetText(configurationText, PropHuntGame.Instance != null ? PropHuntGame.Instance.ConfigurationError : "");
-        SetText(recoveryText, RecoveryText());
-        if (inRoom)
-            RefreshCurrentRoom();
-        if (mainScroll != null && previousInRoom != inRoom)
-            mainScroll.verticalNormalizedPosition = 1f;
-        previousInRoom = inRoom;
-        bool diagnostics = diagnosticsToggle != null && diagnosticsToggle.isOn;
-        SetActive(diagnosticsPanel, diagnostics);
-        if (diagnostics)
-            SetText(diagnosticsText, PhotonLocalValidation.DescribeState());
+        SetText(
+            slot.label,
+            $"{info.Name} - " +
+            $"{info.PlayerCount}/" +
+            $"{info.MaxPlayers}" +
+            state
+        );
+
+        if (slot.joinButton == null)
+            return;
+
+        bool canEnter =
+            PropHuntRoundRules.CanEnterRoom(
+                info.IsOpen,
+                info.PlayerCount,
+                info.MaxPlayers
+            );
+
+        slot.joinButton.interactable =
+            canEnter;
+
+        slot.joinButton
+            .onClick
+            .RemoveAllListeners();
+
+        string roomName =
+            info.Name;
+
+        slot.joinButton
+            .onClick
+            .AddListener(
+                () => JoinRoom(roomName)
+            );
+    }
+
+    private void ClearRoomSlot(
+        RoomSlotUI slot)
+    {
+        slot.roomName = null;
+
+        SetText(
+            slot.label,
+            "Sala disponible"
+        );
+
+        if (slot.joinButton == null)
+            return;
+
+        slot.joinButton.interactable =
+            false;
+
+        slot.joinButton
+            .onClick
+            .RemoveAllListeners();
     }
 
     private void RefreshCurrentRoom()
     {
-        var players = new StringBuilder();
-        players.AppendLine($"{PhotonNetwork.CurrentRoom.Name} — {PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.MaxPlayers}");
-        foreach (Player player in PhotonNetwork.PlayerList)
-            players.AppendLine(roomBrowser.PlayerName(player.ActorNumber) + (player.IsInactive ? " (sin conexión)" : "") + (player.IsMasterClient ? " (Master)" : ""));
-        SetText(roomText, players.ToString());
-        int actor = PhotonNetwork.LocalPlayer.ActorNumber;
-        bool participant = PropHuntGame.IsParticipant(actor);
-        bool hunter = PropHuntGame.TryGetShooterActorNumber(out int hunterActor) && actor == hunterActor;
-        SetText(roleText, participant ? "Rol: " + (hunter ? "Cazador" : "Prop") + " — " + PropHuntGame.GetPlayerState(actor) : "Esperando la próxima ronda.");
-        SetText(roundText, $"Ronda {PropHuntGame.CurrentRound} — {PhotonFeedbackText.Phase(PropHuntGame.Phase)}");
-        SetText(objectivesText, $"Botones activados: {PropHuntGame.ActivatedButtonCount}/2 | Props vivos: {PropHuntGame.AlivePropCount}");
-        SetText(instructionText, PropHuntGame.CanLocalPlayerActivateButtons() ? "W/S o flechas: mover. A/D: girar. E: activar un botón cercano." : PropHuntGame.CanLocalPlayerShoot() ? "W/S o flechas: mover. A/D: girar. Espacio: disparar." : "");
-        SetText(resultText, PropHuntGame.Phase == GamePhase.Finished ? PhotonFeedbackText.Result(PropHuntGame.WinnerTeam, PropHuntGame.EndReason) : "");
-    }
-
-    private string RecoveryText()
-    {
-        if (roomBrowser.IsRecovering)
-            return $"Recuperando '{roomBrowser.RecoveryRoom}' — intento {roomBrowser.ReconnectAttempts}.";
         if (!PhotonNetwork.InRoom)
-            return "";
-        var text = new StringBuilder();
-        foreach (int actor in PropHuntGame.Participants())
-        {
-            double remaining = PropHuntGame.ReconnectDeadline(actor) - PhotonNetwork.Time;
-            if (remaining > 0d)
-                text.AppendLine($"{roomBrowser.PlayerName(actor)}: puede regresar durante {remaining:F0} s.");
-        }
-        return text.ToString();
-    }
-
-    private void RefreshNotices()
-    {
-        if (roomBrowser == null || noticesText == null)
             return;
-        var text = new StringBuilder();
-        foreach (PhotonFeedbackNotice notice in roomBrowser.Notices)
-            text.AppendLine((notice.Severity == PhotonFeedbackSeverity.Error ? "Error: " : notice.Severity == PhotonFeedbackSeverity.Warning ? "Aviso: " : "") + notice.Message);
-        noticesText.supportRichText = false;
-        SetText(noticesText, text.ToString());
-        if (noticesScroll != null)
-            noticesScroll.verticalNormalizedPosition = 0f;
+
+        StringBuilder text =
+            new StringBuilder();
+
+        text.AppendLine(
+            PhotonNetwork.CurrentRoom.Name
+        );
+
+        text.AppendLine(
+            $"{PhotonNetwork.CurrentRoom.PlayerCount}/" +
+            $"{PropHuntRoundRules.RequiredPlayers} jugadores"
+        );
+
+        text.AppendLine();
+
+        foreach (Player player in
+                 PhotonNetwork.PlayerList)
+        {
+            string playerName =
+                string.IsNullOrWhiteSpace(
+                    player.NickName
+                )
+                    ? $"Jugador {player.ActorNumber}"
+                    : player.NickName;
+
+            text.Append(
+                playerName
+            );
+
+            if (player.IsMasterClient)
+            {
+                text.Append(
+                    " (Master)"
+                );
+            }
+
+            text.AppendLine();
+        }
+
+        text.AppendLine();
+
+        if (PhotonNetwork.CurrentRoom.PlayerCount <
+            PropHuntRoundRules.RequiredPlayers)
+        {
+            text.Append(
+                PhotonFeedbackText.WaitingPlayers(
+                    PhotonNetwork.CurrentRoom.PlayerCount
+                )
+            );
+        }
+        else
+        {
+            text.Append(
+                "Comenzando partida..."
+            );
+        }
+
+        SetText(
+            roomText,
+            text.ToString()
+        );
     }
 
-    private static Color SeverityColor(PhotonFeedbackSeverity severity) => severity == PhotonFeedbackSeverity.Error ? new Color(1f, 0.35f, 0.35f) : severity == PhotonFeedbackSeverity.Warning ? new Color(1f, 0.8f, 0.3f) : Color.white;
-
-    private static void SetText(Text target, string value)
+    private void SetTemporaryStatus(
+    string message,
+    float duration = 4f)
     {
-        if (target != null && target.text != (value ?? ""))
+        statusHoldUntil =
+            Time.unscaledTime + duration;
+
+        SetStatus(message);
+    }
+
+    private void RefreshConnectionStatus()
+    {
+        // No pisa mensajes de error importantes
+        // mientras Photon todavía se está conectando.
+
+        if (Time.unscaledTime <
+    statusHoldUntil)
         {
-            target.supportRichText = false;
-            target.text = value ?? "";
+            return;
+        }
+
+        if (PhotonNetwork.InRoom)
+        {
+            SetStatus(
+                PhotonFeedbackText.WaitingPlayers(
+                    PhotonNetwork.CurrentRoom.PlayerCount
+                )
+            );
+
+            return;
+        }
+
+        if (PhotonNetwork.InLobby)
+        {
+            SetStatus(
+                "Lobby conectado. Elegí o creá una sala."
+            );
+
+            return;
+        }
+
+        if (PhotonNetwork.IsConnectedAndReady)
+        {
+            SetStatus(
+                "Conectado a Photon."
+            );
+
+            return;
+        }
+
+        if (PhotonNetwork.IsConnected)
+        {
+            SetStatus(
+                "Conectando..."
+            );
         }
     }
-    private static void SetInteractable(Selectable target, bool value)
+
+    private void EnsureNickname()
     {
-        if (target != null)
-            target.interactable = value;
+        if (!string.IsNullOrWhiteSpace(
+            PhotonNetwork.NickName))
+        {
+            return;
+        }
+
+        PhotonNetwork.NickName =
+            $"Jugador{UnityEngine.Random.Range(1000, 9999)}";
     }
-    private static void SetActive(GameObject target, bool value)
+
+    // --------------------------------------------------
+    // HELPERS UI
+    // --------------------------------------------------
+
+    private void SetStatus(
+        string message)
     {
-        if (target != null && target.activeSelf != value)
-            target.SetActive(value);
+        SetText(
+            statusText,
+            message
+        );
+    }
+
+    private static void SetText(
+        Text target,
+        string value)
+    {
+        if (target == null)
+            return;
+
+        string finalValue =
+            value ?? "";
+
+        if (target.text ==
+            finalValue)
+        {
+            return;
+        }
+
+        target.supportRichText =
+            false;
+
+        target.text =
+            finalValue;
+    }
+
+    private static void SetActive(
+        GameObject target,
+        bool value)
+    {
+        if (target == null)
+            return;
+
+        if (target.activeSelf ==
+            value)
+        {
+            return;
+        }
+
+        target.SetActive(
+            value
+        );
     }
 }
