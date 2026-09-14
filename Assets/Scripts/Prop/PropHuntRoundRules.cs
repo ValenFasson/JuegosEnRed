@@ -2,7 +2,7 @@ using System;
 
 public static class PropHuntRoundRules
 {
-    public const int RequiredPlayers = 2;
+    public const int MaxPlayers = 4;
 
     public const int RequiredButtons = 5;
     public const int ButtonSpawnCount = 20;
@@ -13,21 +13,23 @@ public static class PropHuntRoundRules
     public const float MinPropScale = 0.5f;
     public const float MaxPropScale = 1.5f;
 
+
+
+    public static bool CanStartGame(int playerCount)
+    {
+        return playerCount >= 1 &&
+               playerCount <= MaxPlayers;
+    }
+
     public static bool CanEnterRoom(
         bool isOpen,
         int playerCount,
         int maxPlayers)
     {
         return isOpen &&
-               playerCount < RequiredPlayers &&
+               playerCount < MaxPlayers &&
                (maxPlayers == 0 ||
                 playerCount < maxPlayers);
-    }
-
-    public static bool CanStartGame(
-        int playerCount)
-    {
-        return playerCount == RequiredPlayers;
     }
 
     public static bool CanPropScale(

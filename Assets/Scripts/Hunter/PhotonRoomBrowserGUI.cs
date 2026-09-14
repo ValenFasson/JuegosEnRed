@@ -46,6 +46,9 @@ public sealed class PhotonRoomBrowserGUI :
     private Text roomText;
 
     [SerializeField]
+    private Button startGameButton;
+
+    [SerializeField]
     private Button leaveButton;
 
     private float nextRefreshTime;
@@ -148,6 +151,18 @@ public sealed class PhotonRoomBrowserGUI :
     }
 
     // --------------------------------------------------
+    // START GAME
+    // --------------------------------------------------
+
+    public void StartGame()
+    {
+        if (roomManager == null)
+            return;
+
+        roomManager.StartGame();
+    }
+
+    // --------------------------------------------------
     // NICKNAME
     // --------------------------------------------------
 
@@ -168,7 +183,8 @@ public sealed class PhotonRoomBrowserGUI :
                 .Replace("\n", "")
                 .Replace("\r", "");
 
-        if (string.IsNullOrWhiteSpace(newName))
+        if (string.IsNullOrWhiteSpace(
+            newName))
         {
             return;
         }
@@ -267,6 +283,10 @@ public sealed class PhotonRoomBrowserGUI :
         }
     }
 
+    // --------------------------------------------------
+    // CONTROLS
+    // --------------------------------------------------
+
     private void RefreshConnectionControls()
     {
         if (connectButton != null)
@@ -298,7 +318,28 @@ public sealed class PhotonRoomBrowserGUI :
             leaveButton.interactable =
                 PhotonNetwork.InRoom;
         }
+
+        // El botón de iniciar partida
+        // solamente existe visualmente para el Master.
+        if (startGameButton != null)
+        {
+            bool isMaster =
+                PhotonNetwork.InRoom &&
+                PhotonNetwork.IsMasterClient;
+
+            startGameButton.gameObject.SetActive(
+                isMaster
+            );
+
+            startGameButton.interactable =
+                isMaster &&
+                roomManager.CanStartGame;
+        }
     }
+
+    // --------------------------------------------------
+    // ROOM LIST
+    // --------------------------------------------------
 
     private void RefreshRoomSlots()
     {
@@ -319,12 +360,14 @@ public sealed class PhotonRoomBrowserGUI :
                     out RoomInfo info
                 );
 
+            // Si todavía no existe,
+            // mostramos 0/4.
             if (!known)
             {
                 SetText(
                     slot.label,
                     $"{slot.roomName} - 0/" +
-                    $"{PropHuntRoundRules.RequiredPlayers}"
+                    $"{roomManager.MaxPlayersPerRoom}"
                 );
 
                 SetInteractable(
@@ -339,21 +382,22 @@ public sealed class PhotonRoomBrowserGUI :
 
             if (!info.IsOpen)
             {
-                suffix = " - Cerrada";
+                suffix =
+                    " - Cerrada";
             }
             else if (
                 info.MaxPlayers > 0 &&
                 info.PlayerCount >=
                 info.MaxPlayers)
             {
-                suffix = " - Llena";
+                suffix =
+                    " - Llena";
             }
 
             int maxPlayers =
                 info.MaxPlayers > 0
                     ? info.MaxPlayers
-                    : PropHuntRoundRules
-                        .RequiredPlayers;
+                    : roomManager.MaxPlayersPerRoom;
 
             SetText(
                 slot.label,
@@ -378,6 +422,10 @@ public sealed class PhotonRoomBrowserGUI :
         }
     }
 
+    // --------------------------------------------------
+    // CURRENT ROOM
+    // --------------------------------------------------
+
     private void RefreshCurrentRoom()
     {
         if (!PhotonNetwork.InRoom)
@@ -392,13 +440,19 @@ public sealed class PhotonRoomBrowserGUI :
 
         text.AppendLine();
 
+        int currentPlayers =
+            PhotonNetwork.CurrentRoom.PlayerCount;
+
+        int maxPlayers =
+            roomManager.MaxPlayersPerRoom;
+
         text.AppendLine(
-            $"{PhotonNetwork.CurrentRoom.PlayerCount}/" +
-            $"{PropHuntRoundRules.RequiredPlayers} jugadores"
+            $"{currentPlayers}/{maxPlayers} jugadores"
         );
 
         text.AppendLine();
 
+        // Lista de jugadores.
         foreach (Player player in
                  PhotonNetwork.PlayerList)
         {
@@ -424,20 +478,47 @@ public sealed class PhotonRoomBrowserGUI :
 
         text.AppendLine();
 
-        if (PhotonNetwork.CurrentRoom.PlayerCount <
-            PropHuntRoundRules.RequiredPlayers)
+        // ----------------------------------------------
+        // NUEVAS REGLAS
+        // ----------------------------------------------
+
+        if (PhotonNetwork.IsMasterClient)
         {
-            text.Append(
-                PhotonFeedbackText.WaitingPlayers(
-                    PhotonNetwork.CurrentRoom.PlayerCount
-                )
-            );
+            if (currentPlayers <
+                maxPlayers)
+            {
+                text.AppendLine(
+                    "Podés iniciar la partida cuando quieras."
+                );
+
+                text.Append(
+                    $"Todavía pueden entrar " +
+                    $"{maxPlayers - currentPlayers} jugador(es)."
+                );
+            }
+            else
+            {
+                text.Append(
+                    "La sala está llena. " +
+                    "Podés iniciar la partida."
+                );
+            }
         }
         else
         {
-            text.Append(
-                "Iniciando partida..."
-            );
+            if (currentPlayers <
+                maxPlayers)
+            {
+                text.Append(
+                    "Esperando a que el Master inicie la partida..."
+                );
+            }
+            else
+            {
+                text.Append(
+                    "Sala llena. Esperando a que el Master inicie la partida..."
+                );
+            }
         }
 
         SetText(
@@ -456,6 +537,7 @@ public sealed class PhotonRoomBrowserGUI :
         switch (severity)
         {
             case PhotonFeedbackSeverity.Error:
+
                 return new Color(
                     1f,
                     0.35f,
@@ -463,6 +545,7 @@ public sealed class PhotonRoomBrowserGUI :
                 );
 
             case PhotonFeedbackSeverity.Warning:
+
                 return new Color(
                     1f,
                     0.8f,
@@ -470,6 +553,7 @@ public sealed class PhotonRoomBrowserGUI :
                 );
 
             default:
+
                 return Color.white;
         }
     }
@@ -515,7 +599,9 @@ public sealed class PhotonRoomBrowserGUI :
         if (target != null &&
             target.activeSelf != value)
         {
-            target.SetActive(value);
+            target.SetActive(
+                value
+            );
         }
     }
 }

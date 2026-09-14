@@ -6,9 +6,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
-public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
+public sealed class PropHuntRoomManager :
+    MonoBehaviourPunCallbacks
 {
-    public static PropHuntRoomManager Instance { get; private set; }
+    public static PropHuntRoomManager Instance
+    {
+        get;
+        private set;
+    }
 
     private static readonly string[] FixedRoomNames =
     {
@@ -22,7 +27,7 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
     [SerializeField] private bool connectOnStart = true;
     [SerializeField] private string gameVersion = "0.1";
 
-    [Header("Scenes")]
+    [Header("Scene")]
     [SerializeField] private string gameSceneName = "Game";
 
     private readonly Dictionary<string, RoomInfo> rooms =
@@ -36,10 +41,13 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         FixedRoomNames;
 
     public int MaxPlayersPerRoom =>
-        PropHuntRoundRules.RequiredPlayers;
+        PropHuntRoundRules.MaxPlayers;
 
-    public string StatusMessage { get; private set; } =
-        "Iniciando Photon...";
+    public string StatusMessage
+    {
+        get;
+        private set;
+    } = "Iniciando Photon...";
 
     public PhotonFeedbackSeverity StatusSeverity
     {
@@ -53,6 +61,13 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         !PhotonNetwork.InRoom &&
         !roomRequestPending;
 
+    public bool CanStartGame =>
+        PhotonNetwork.InRoom &&
+        PhotonNetwork.IsMasterClient &&
+        PropHuntRoundRules.CanStartGame(
+            PhotonNetwork.CurrentRoom.PlayerCount
+        );
+
     private void Awake()
     {
         if (Instance != null &&
@@ -64,11 +79,12 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
 
         Instance = this;
 
-        DontDestroyOnLoad(gameObject);
+        DontDestroyOnLoad(
+            gameObject
+        );
 
-        // Fundamental para que todos sigan al Master
-        // cuando se carga Game.
-        PhotonNetwork.AutomaticallySyncScene = true;
+        PhotonNetwork.AutomaticallySyncScene =
+            true;
     }
 
     private void Start()
@@ -212,8 +228,7 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
             new RoomOptions
             {
                 MaxPlayers =
-                    (byte)PropHuntRoundRules
-                        .RequiredPlayers,
+                    (byte)PropHuntRoundRules.MaxPlayers,
 
                 IsOpen = true,
                 IsVisible = true,
@@ -257,13 +272,63 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         PhotonNetwork.LeaveRoom();
     }
 
-    public bool TryGetRoomInfo(
-        string roomName,
-        out RoomInfo roomInfo)
+    // --------------------------------------------------
+    // START GAME - NUEVO
+    // --------------------------------------------------
+
+    public void StartGame()
     {
-        return rooms.TryGetValue(
-            roomName,
-            out roomInfo
+        if (!PhotonNetwork.InRoom)
+        {
+            Debug.LogWarning(
+                "[Photon] No estás dentro de una Room."
+            );
+
+            return;
+        }
+
+        // Solamente el Master puede iniciar.
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            Debug.LogWarning(
+                "[Photon] Solo el Master puede iniciar la partida."
+            );
+
+            return;
+        }
+
+        int playerCount =
+            PhotonNetwork.CurrentRoom.PlayerCount;
+
+        if (!PropHuntRoundRules.CanStartGame(
+            playerCount))
+        {
+            Debug.LogWarning(
+                "[Photon] No se puede iniciar la partida."
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[Photon] El Master inició la partida " +
+            $"con {playerCount} jugador(es)."
+        );
+
+        // Nadie más puede entrar una vez
+        // comenzada la partida.
+        PhotonNetwork.CurrentRoom.IsOpen =
+            false;
+
+        PhotonNetwork.CurrentRoom.IsVisible =
+            false;
+
+        SetStatus(
+            $"Iniciando partida con {playerCount} jugador(es)..."
+        );
+
+        PhotonNetwork.LoadLevel(
+            gameSceneName
         );
     }
 
@@ -291,7 +356,6 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         );
 
         roomRequestPending = false;
-
         rooms.Clear();
 
         SetStatus(
@@ -304,8 +368,11 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
     {
         foreach (RoomInfo room in roomList)
         {
-            if (!IsFixedRoomName(room.Name))
+            if (!IsFixedRoomName(
+                room.Name))
+            {
                 continue;
+            }
 
             if (room.RemovedFromList)
             {
@@ -319,11 +386,6 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
                     room;
             }
         }
-
-        Debug.Log(
-            $"[Photon] Room list actualizada. " +
-            $"Salas conocidas: {rooms.Count}"
-        );
     }
 
     public override void OnCreatedRoom()
@@ -342,12 +404,13 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
             $"[Photon] OnJoinedRoom: " +
             $"{PhotonNetwork.CurrentRoom.Name} - " +
             $"{PhotonNetwork.CurrentRoom.PlayerCount}/" +
-            $"{PropHuntRoundRules.RequiredPlayers}"
+            $"{PropHuntRoundRules.MaxPlayers}"
         );
 
         UpdateRoomStatus();
 
-        TryStartGame();
+        // IMPORTANTE:
+        // YA NO SE INICIA AUTOMÁTICAMENTE.
     }
 
     public override void OnPlayerEnteredRoom(
@@ -356,12 +419,13 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         Debug.Log(
             $"[Photon] Entró {newPlayer.NickName}. " +
             $"{PhotonNetwork.CurrentRoom.PlayerCount}/" +
-            $"{PropHuntRoundRules.RequiredPlayers}"
+            $"{PropHuntRoundRules.MaxPlayers}"
         );
 
         UpdateRoomStatus();
 
-        TryStartGame();
+        // IMPORTANTE:
+        // NO llamar StartGame() acá.
     }
 
     public override void OnPlayerLeftRoom(
@@ -374,22 +438,11 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.InRoom)
             return;
 
-        // En Game, las desconexiones las maneja
-        // PropHuntGameManager.
         if (SceneManager
             .GetActiveScene()
             .name == gameSceneName)
         {
             return;
-        }
-
-        if (PhotonNetwork.IsMasterClient)
-        {
-            PhotonNetwork.CurrentRoom.IsOpen =
-                true;
-
-            PhotonNetwork.CurrentRoom.IsVisible =
-                true;
         }
 
         UpdateRoomStatus();
@@ -399,17 +452,9 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
     {
         roomRequestPending = false;
 
-        Debug.Log(
-            "[Photon] OnLeftRoom"
-        );
-
         SetStatus(
             "Volviendo al Lobby..."
         );
-
-        // Al volver al Master Server,
-        // OnConnectedToMaster volverá a ejecutar
-        // JoinLobbyIfNeeded().
     }
 
     public override void OnJoinRoomFailed(
@@ -454,7 +499,6 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         DisconnectCause cause)
     {
         roomRequestPending = false;
-
         rooms.Clear();
 
         Debug.LogWarning(
@@ -470,40 +514,16 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
     }
 
     // --------------------------------------------------
-    // START GAME
+    // INFO
     // --------------------------------------------------
 
-    private void TryStartGame()
+    public bool TryGetRoomInfo(
+        string roomName,
+        out RoomInfo roomInfo)
     {
-        if (!PhotonNetwork.InRoom)
-            return;
-
-        if (!PhotonNetwork.IsMasterClient)
-            return;
-
-        if (!PropHuntRoundRules.CanStartGame(
-            PhotonNetwork.CurrentRoom.PlayerCount))
-        {
-            return;
-        }
-
-        Debug.Log(
-            "[Photon] 4/4 jugadores. " +
-            "Cargando Game..."
-        );
-
-        PhotonNetwork.CurrentRoom.IsOpen =
-            false;
-
-        PhotonNetwork.CurrentRoom.IsVisible =
-            false;
-
-        SetStatus(
-            "4/4 jugadores. Iniciando partida..."
-        );
-
-        PhotonNetwork.LoadLevel(
-            gameSceneName
+        return rooms.TryGetValue(
+            roomName,
+            out roomInfo
         );
     }
 
@@ -512,16 +532,15 @@ public sealed class PropHuntRoomManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.InRoom)
             return;
 
+        int currentPlayers =
+            PhotonNetwork.CurrentRoom.PlayerCount;
+
         SetStatus(
             $"{PhotonNetwork.CurrentRoom.Name} - " +
-            $"{PhotonNetwork.CurrentRoom.PlayerCount}/" +
-            $"{PropHuntRoundRules.RequiredPlayers} jugadores"
+            $"{currentPlayers}/" +
+            $"{PropHuntRoundRules.MaxPlayers} jugadores"
         );
     }
-
-    // --------------------------------------------------
-    // HELPERS
-    // --------------------------------------------------
 
     private static bool TryGetFixedRoomName(
         string requestedName,

@@ -290,7 +290,7 @@ public static class PhotonFeedbackText
         return
             $"Esperando jugadores: " +
             $"{currentPlayers}/" +
-            $"{PropHuntRoundRules.RequiredPlayers}";
+            $"{PropHuntRoundRules.MaxPlayers}";
     }
 
     public static string Result(
