@@ -43437,7 +43437,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c20106f75cfe8945a9b9c7202a066c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PropHuntGameManager
-  hunterPrefab: {fileID: 1605019649902786495, guid: 295e0cff8a82ba24aa5034ed272379bc, type: 3}
+  hunterPrefab: {fileID: 1605019649902786495, guid: dc52958f9d51d6e4a855a14aadb88362, type: 3}
   propPrefab: {fileID: 6539209409562169690, guid: d7f9b0df89b409e47bd6e0bca710ee77, type: 3}
   hunterSpawn: {fileID: 638374877}
   propSpawns:
