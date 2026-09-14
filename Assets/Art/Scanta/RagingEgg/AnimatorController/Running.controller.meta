@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 08fd98a69c0c94b7fa8b11755b7554a4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 168824
+  packageName: Raging Egg
+  packageVersion: 1.0
+  assetPath: Assets/Scanta/RagingEgg/AnimatorController/Running.controller
+  uploadId: 368346
