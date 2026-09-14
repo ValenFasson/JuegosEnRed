@@ -61,6 +61,7 @@ public sealed class PropHuntGameManager :
     private GameObject localPlayerInstance;
 
     private NetworkPropController localPropController;
+    private PropRoundUI localPropUI;
     private HunterRoundUI localHunterUI;
 
     private PropHuntObjectiveButton[] spawnedButtons;
@@ -142,6 +143,13 @@ public sealed class PropHuntGameManager :
             localHunterUI.SetHideSeconds(
                 remaining
             );
+
+            if (localPropUI != null)
+            {
+                localPropUI.SetHideSeconds(
+                    remaining
+                );
+            }
         }
 
         if (!PhotonNetwork.IsMasterClient)
@@ -428,6 +436,9 @@ public sealed class PropHuntGameManager :
                         NetworkPropController
                     >();
 
+            localPropUI =
+    localPlayerInstance.GetComponentInChildren<PropRoundUI>(true);
+
             PhotonNetwork.LocalPlayer
                 .SetCustomProperties(
                     new Hashtable
@@ -522,6 +533,37 @@ public sealed class PropHuntGameManager :
                 localHunterUI.SetFinished();
 
                 break;
+        }
+
+
+        if (localPropController != null)
+        {
+            bool hiding =
+                CurrentPhase == GamePhase.Hiding;
+
+            localPropController.SetCanScale(
+                hiding
+            );
+
+            if (localPropUI != null)
+            {
+                if (hiding)
+                {
+                    localPropUI.SetHiding(
+                        GetRemainingHideSeconds()
+                    );
+                }
+                else
+                {
+                    localPropUI.Hide();
+                }
+            }
+
+            if (CurrentPhase ==
+                GamePhase.Finished)
+            {
+                localPropController.enabled = false;
+            }
         }
     }
 

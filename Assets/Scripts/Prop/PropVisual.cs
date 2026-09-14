@@ -1,155 +1,186 @@
+using System.Collections.Generic;
+using ExitGames.Client.Photon;
 using Photon.Pun;
 using UnityEngine;
-using Hashtable =
-    ExitGames.Client.Photon.Hashtable;
 
-public sealed class PropVisual : MonoBehaviourPun, IPunObservable
+public sealed class PropVisual :
+    MonoBehaviourPun,
+    IPunObservable
 {
+    [Header("Visuals")]
     [SerializeField] private Transform visualsRoot;
 
-    private const float MinScale = 0.5f;
-    private const float MaxScale = 1.5f;
-    private const float NetworkSmooth = 12f;
+    private readonly List<GameObject> visuals =
+        new List<GameObject>();
 
-    private GameObject[] variants;
-
-    private int currentVariant = -1;
-
-    private float currentScale = 1f;
-    private float networkScale = 1f;
+    private int selectedVisualIndex = -1;
 
     private float visualYaw;
-    private float networkVisualYaw;
+    private float visualScale = 1f;
+
+    private bool eliminated;
 
     private void Awake()
     {
-        if (visualsRoot == null)
-            return;
-
-        variants =
-            new GameObject[visualsRoot.childCount];
-
-        for (int i = 0; i < visualsRoot.childCount; i++)
-        {
-            variants[i] =
-                visualsRoot.GetChild(i).gameObject;
-
-            variants[i].SetActive(false);
-        }
+        CacheVisuals();
     }
 
     private void Start()
     {
-        if (variants == null ||
-            variants.Length == 0)
+        // Testing sin Photon.
+        if (!PhotonNetwork.InRoom)
+        {
+            SelectRandomVisualLocal();
+            ApplyVisualTransform();
+            return;
+        }
+
+        // Solo el owner decide qué visual toca.
+        if (photonView.IsMine)
+        {
+            int randomIndex =
+                Random.Range(
+                    0,
+                    visuals.Count
+                );
+
+            photonView.RPC(
+                nameof(RpcSetVisual),
+                RpcTarget.AllBuffered,
+                randomIndex
+            );
+        }
+    }
+
+    private void CacheVisuals()
+    {
+        visuals.Clear();
+
+        if (visualsRoot == null)
         {
             Debug.LogError(
-                "El Prop no tiene variantes visuales.",
+                "PropVisual: falta asignar Visuals Root.",
                 this
             );
 
             return;
         }
 
-        // Prueba local sin Photon.
-        if (!PhotonNetwork.InRoom)
+        for (int i = 0;
+             i < visualsRoot.childCount;
+             i++)
         {
-            int randomIndex =
-                Random.Range(
-                    0,
-                    variants.Length
-                );
-
-            ApplyVariant(randomIndex);
-            return;
+            visuals.Add(
+                visualsRoot
+                    .GetChild(i)
+                    .gameObject
+            );
         }
 
-        // En Photon solamente el owner elige
-        // qué variante corresponde.
-        if (!photonView.IsMine)
-            return;
-
-        int selectedVariant =
-            Random.Range(
-                0,
-                variants.Length
+        if (visuals.Count == 0)
+        {
+            Debug.LogError(
+                "PropVisual: Visuals Root no tiene variantes.",
+                this
             );
-
-        photonView.RPC(
-            nameof(RpcSetVariant),
-            RpcTarget.AllBuffered,
-            selectedVariant
-        );
+        }
     }
 
-    private void Update()
+    private void SelectRandomVisualLocal()
     {
-        if (!PhotonNetwork.InRoom)
+        if (visuals.Count == 0)
             return;
 
-        // El owner modifica directamente sus visuales.
-        if (photonView.IsMine)
-            return;
-
-        if (visualsRoot == null)
-            return;
-
-        Quaternion targetRotation =
-            Quaternion.Euler(
-                0f,
-                networkVisualYaw,
-                0f
+        selectedVisualIndex =
+            Random.Range(
+                0,
+                visuals.Count
             );
 
-        visualsRoot.localRotation =
-            Quaternion.Slerp(
-                visualsRoot.localRotation,
-                targetRotation,
-                NetworkSmooth * Time.deltaTime
-            );
-
-        Vector3 targetScale =
-            Vector3.one * networkScale;
-
-        visualsRoot.localScale =
-            Vector3.Lerp(
-                visualsRoot.localScale,
-                targetScale,
-                NetworkSmooth * Time.deltaTime
-            );
+        ApplySelectedVisual();
     }
 
     [PunRPC]
-    private void RpcSetVariant(int variantIndex)
+    private void RpcSetVisual(
+        int index)
     {
-        ApplyVariant(variantIndex);
-    }
-
-    private void ApplyVariant(int variantIndex)
-    {
-        if (variants == null)
-            return;
-
-        if (variantIndex < 0 ||
-            variantIndex >= variants.Length)
+        if (index < 0 ||
+            index >= visuals.Count)
         {
             return;
         }
 
-        for (int i = 0; i < variants.Length; i++)
+        selectedVisualIndex = index;
+
+        ApplySelectedVisual();
+    }
+
+    private void ApplySelectedVisual()
+    {
+        for (int i = 0;
+             i < visuals.Count;
+             i++)
         {
-            variants[i].SetActive(
-                i == variantIndex
+            if (visuals[i] == null)
+                continue;
+
+            visuals[i].SetActive(
+                i == selectedVisualIndex
             );
         }
-
-        currentVariant = variantIndex;
     }
 
-    public void SetVisualRotation(float yaw)
+    // --------------------------------------------------
+    // ROTATION
+    // --------------------------------------------------
+
+    public void AddVisualRotation(
+        float yawDelta)
     {
+        if (!CanControlVisual())
+            return;
+
+        visualYaw += yawDelta;
+
+        ApplyVisualTransform();
+    }
+
+    public void SetVisualRotation(
+        float yaw)
+    {
+        if (!CanControlVisual())
+            return;
+
         visualYaw = yaw;
 
+        ApplyVisualTransform();
+    }
+
+    // --------------------------------------------------
+    // SCALE
+    // --------------------------------------------------
+
+    public void SetVisualScale(
+        float scale)
+    {
+        if (!CanControlVisual())
+            return;
+
+        visualScale =
+            PropHuntRoundRules.ClampPropScale(
+                scale
+            );
+
+        ApplyVisualTransform();
+    }
+
+    public float GetVisualScale()
+    {
+        return visualScale;
+    }
+
+    private void ApplyVisualTransform()
+    {
         if (visualsRoot == null)
             return;
 
@@ -159,78 +190,108 @@ public sealed class PropVisual : MonoBehaviourPun, IPunObservable
                 visualYaw,
                 0f
             );
-    }
-
-    public void ChangeScale(float amount)
-    {
-        if (PhotonNetwork.InRoom &&
-            !photonView.IsMine)
-        {
-            return;
-        }
-
-        currentScale =
-            Mathf.Clamp(
-                currentScale + amount,
-                MinScale,
-                MaxScale
-            );
-
-        ApplyScale(currentScale);
-    }
-
-    private void ApplyScale(float newScale)
-    {
-        if (visualsRoot == null)
-            return;
-
-        currentScale =
-            Mathf.Clamp(
-                newScale,
-                MinScale,
-                MaxScale
-            );
 
         visualsRoot.localScale =
-            Vector3.one * currentScale;
+            Vector3.one *
+            visualScale;
     }
+
+    private bool CanControlVisual()
+    {
+        return
+            !PhotonNetwork.InRoom ||
+            photonView.IsMine;
+    }
+
+
+    public void ChangeScale(float delta)
+    {
+        if (!CanControlVisual())
+            return;
+
+        visualScale += delta;
+
+        visualScale =
+            PropHuntRoundRules.ClampPropScale(
+                visualScale
+            );
+
+        ApplyVisualTransform();
+    }
+
+    // --------------------------------------------------
+    // ELIMINATION
+    // --------------------------------------------------
 
     public void RequestElimination()
     {
-        // Prueba local.
+        if (eliminated)
+            return;
+
+        // Testing offline.
         if (!PhotonNetwork.InRoom)
         {
-            Destroy(gameObject);
+            eliminated = true;
+
+            Destroy(
+                photonView != null
+                    ? photonView.gameObject
+                    : gameObject
+            );
+
             return;
         }
 
+        if (photonView.Owner == null)
+        {
+            Debug.LogWarning(
+                "PropVisual: el Prop no tiene owner.",
+                this
+            );
+
+            return;
+        }
+
+        // La eliminación la ejecuta el cliente
+        // dueño del Prop.
         photonView.RPC(
             nameof(RpcEliminate),
-            RpcTarget.All
+            photonView.Owner
         );
     }
 
     [PunRPC]
     private void RpcEliminate()
     {
+        // Solo el owner puede destruir correctamente
+        // su objeto PhotonNetwork.Instantiate.
         if (!photonView.IsMine)
             return;
+
+        if (eliminated)
+            return;
+
+        eliminated = true;
 
         PhotonNetwork.LocalPlayer
             .SetCustomProperties(
                 new Hashtable
                 {
-                {
-                    PropHuntGameManager.AliveKey,
-                    false
-                }
+                    {
+                        PropHuntGameManager.AliveKey,
+                        false
+                    }
                 }
             );
 
         PhotonNetwork.Destroy(
-            gameObject
+            photonView.gameObject
         );
     }
+
+    // --------------------------------------------------
+    // NETWORK VISUAL SYNC
+    // --------------------------------------------------
 
     public void OnPhotonSerializeView(
         PhotonStream stream,
@@ -238,16 +299,28 @@ public sealed class PropVisual : MonoBehaviourPun, IPunObservable
     {
         if (stream.IsWriting)
         {
-            stream.SendNext(visualYaw);
-            stream.SendNext(currentScale);
+            stream.SendNext(
+                visualYaw
+            );
+
+            stream.SendNext(
+                visualScale
+            );
         }
         else
         {
-            networkVisualYaw =
+            visualYaw =
                 (float)stream.ReceiveNext();
 
-            networkScale =
+            visualScale =
                 (float)stream.ReceiveNext();
+
+            visualScale =
+                PropHuntRoundRules.ClampPropScale(
+                    visualScale
+                );
+
+            ApplyVisualTransform();
         }
     }
 }

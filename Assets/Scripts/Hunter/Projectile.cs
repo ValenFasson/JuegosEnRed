@@ -2,45 +2,67 @@ using Photon.Pun;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(PhotonView))]
 public sealed class Projectile : MonoBehaviourPun
 {
-    [SerializeField] private float speed = 20f;
+    [Header("Projectile")]
+    [SerializeField] private float speed = 25f;
     [SerializeField] private float lifeTime = 5f;
 
     private Rigidbody body;
 
-    private bool IsLocalProjectile
-    {
-        get
-        {
-            return !PhotonNetwork.InRoom || photonView.IsMine;
-        }
-    }
+    private bool hasHit;
+    private float destroyTime;
+
+    private bool IsLocalProjectile =>
+        !PhotonNetwork.InRoom ||
+        photonView.IsMine;
 
     private void Awake()
     {
-        body = GetComponent<Rigidbody>();
+        body =
+            GetComponent<Rigidbody>();
+
+        body.useGravity = false;
+
+        // Evita que proyectiles r�pidos atraviesen
+        // colliders entre frames.
+        body.collisionDetectionMode =
+            CollisionDetectionMode.ContinuousDynamic;
+
+        body.interpolation =
+            RigidbodyInterpolation.Interpolate;
     }
 
     private void Start()
     {
-        if (!IsLocalProjectile)
+        destroyTime =
+            Time.time + lifeTime;
+
+        // En red solamente el owner calcula
+        // la f�sica del proyectil.
+        if (PhotonNetwork.InRoom &&
+            !photonView.IsMine)
         {
             body.isKinematic = true;
-            body.useGravity = false;
             return;
         }
 
         body.isKinematic = false;
-        body.useGravity = false;
 
         body.linearVelocity =
             transform.forward * speed;
+    }
 
-        Invoke(
-            nameof(DestroyProjectile),
-            lifeTime
-        );
+    private void Update()
+    {
+        if (!IsLocalProjectile)
+            return;
+
+        if (Time.time >= destroyTime)
+        {
+            DestroyProjectile();
+        }
     }
 
     private void OnCollisionEnter(
@@ -49,11 +71,37 @@ public sealed class Projectile : MonoBehaviourPun
         if (!IsLocalProjectile)
             return;
 
-        PropVisual prop =
+        if (collision == null)
+            return;
+
+        HandleHit(
             collision.collider
-                .GetComponentInParent<
-                    PropVisual
-                >();
+        );
+    }
+
+    private void OnTriggerEnter(
+        Collider other)
+    {
+        if (!IsLocalProjectile)
+            return;
+
+        HandleHit(other);
+    }
+
+    private void HandleHit(
+        Collider hitCollider)
+    {
+        if (hasHit)
+            return;
+
+        if (hitCollider == null)
+            return;
+
+        hasHit = true;
+
+        PropVisual prop =
+            hitCollider
+                .GetComponentInParent<PropVisual>();
 
         if (prop != null)
         {
@@ -65,16 +113,18 @@ public sealed class Projectile : MonoBehaviourPun
 
     private void DestroyProjectile()
     {
-        if (!IsLocalProjectile)
-            return;
-
         if (PhotonNetwork.InRoom)
         {
-            PhotonNetwork.Destroy(gameObject);
+            if (photonView.IsMine)
+            {
+                PhotonNetwork.Destroy(
+                    gameObject
+                );
+            }
+
+            return;
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+
+        Destroy(gameObject);
     }
 }

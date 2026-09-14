@@ -845,19 +845,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 110564179}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 278932774}
-        m_TargetAssemblyTypeName: PhotonRoomBrowserGUI, Assembly-CSharp
-        m_MethodName: JoinRoom
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Sala 2
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &110564179
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1583,7 +1571,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 278932772}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80c12ea4f5474e6a9ab3a7c6f264db0e, type: 3}
   m_Name: 
@@ -1627,7 +1615,19 @@ MonoBehaviour:
   nicknameText: {fileID: 278597597}
   nicknameInput: {fileID: 1552246394}
   renameButton: {fileID: 1590841360}
-  roomSlots: []
+  roomSlots:
+  - roomName: Sala 1
+    label: {fileID: 683567386}
+    joinButton: {fileID: 717998909}
+  - roomName: Sala 2
+    label: {fileID: 376602796}
+    joinButton: {fileID: 110564178}
+  - roomName: Sala 3
+    label: {fileID: 751273568}
+    joinButton: {fileID: 570178602}
+  - roomName: Sala 4
+    label: {fileID: 154173635}
+    joinButton: {fileID: 390537320}
   currentRoomPanel: {fileID: 1455307987}
   roomText: {fileID: 1815794652}
   leaveButton: {fileID: 1876980098}
@@ -2362,19 +2362,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 390537321}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 278932774}
-        m_TargetAssemblyTypeName: PhotonRoomBrowserGUI, Assembly-CSharp
-        m_MethodName: JoinRoom
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Sala 4
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &390537321
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3261,19 +3249,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 570178603}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 278932774}
-        m_TargetAssemblyTypeName: PhotonRoomBrowserGUI, Assembly-CSharp
-        m_MethodName: JoinRoom
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Sala 3
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &570178603
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4750,19 +4726,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 717998910}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 278932774}
-        m_TargetAssemblyTypeName: PhotonRoomBrowserGUI, Assembly-CSharp
-        m_MethodName: JoinRoom
-        m_Mode: 5
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: Sala 1
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &717998910
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5977,7 +5941,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1012082116
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6937,7 +6901,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1294857276
 RectTransform:
   m_ObjectHideFlags: 0

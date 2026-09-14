@@ -45,6 +45,7 @@ MonoBehaviour:
   - RpcEliminate
   - RpcSetScale
   - RpcSetVariant
+  - RpcSetVisual
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 0
