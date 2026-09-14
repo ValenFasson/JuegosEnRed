@@ -101,7 +101,7 @@ public sealed class PhotonRoomBrowserGUI : MonoBehaviour
         {
             bool testsOpen = connectionTests != null && connectionTests.Visible;
             bool typing = nicknameInput != null && nicknameInput.isFocused;
-            bool navigation = testsOpen || typing || !PhotonNetwork.InRoom || TankGame.Phase == GamePhase.Finished;
+            bool navigation = testsOpen || typing || !PhotonNetwork.InRoom || PropHuntGame.Phase == GamePhase.Finished;
             if (!navigation && eventSystem.sendNavigationEvents)
                 eventSystem.SetSelectedGameObject(null);
             eventSystem.sendNavigationEvents = navigation;
@@ -111,7 +111,7 @@ public sealed class PhotonRoomBrowserGUI : MonoBehaviour
     public void Connect() => roomBrowser?.Connect();
     public void JoinRoom(string roomName) => roomBrowser?.JoinOrCreateRoom(roomName);
     public void LeaveRoom() => roomBrowser?.LeaveCurrentRoom();
-    public void PrepareNextRound() => TankGame.Instance?.PrepareNextRound();
+    public void PrepareNextRound() => PropHuntGame.Instance?.PrepareNextRound();
 
     public void ToggleConnectionTests()
     {
@@ -172,8 +172,8 @@ public sealed class PhotonRoomBrowserGUI : MonoBehaviour
         }
 
         SetInteractable(leaveButton, inRoom && roomBrowser.ProcessState == PhotonProcessState.InRoom);
-        SetInteractable(nextRoundButton, inRoom && PhotonNetwork.IsMasterClient && TankGame.Phase == GamePhase.Finished);
-        SetText(configurationText, TankGame.Instance != null ? TankGame.Instance.ConfigurationError : "");
+        SetInteractable(nextRoundButton, inRoom && PhotonNetwork.IsMasterClient && PropHuntGame.Phase == GamePhase.Finished);
+        SetText(configurationText, PropHuntGame.Instance != null ? PropHuntGame.Instance.ConfigurationError : "");
         SetText(recoveryText, RecoveryText());
         if (inRoom)
             RefreshCurrentRoom();
@@ -194,13 +194,13 @@ public sealed class PhotonRoomBrowserGUI : MonoBehaviour
             players.AppendLine(roomBrowser.PlayerName(player.ActorNumber) + (player.IsInactive ? " (sin conexión)" : "") + (player.IsMasterClient ? " (Master)" : ""));
         SetText(roomText, players.ToString());
         int actor = PhotonNetwork.LocalPlayer.ActorNumber;
-        bool participant = TankGame.IsParticipant(actor);
-        bool hunter = TankGame.TryGetShooterActorNumber(out int hunterActor) && actor == hunterActor;
-        SetText(roleText, participant ? "Rol: " + (hunter ? "Cazador" : "Prop") + " — " + TankGame.GetPlayerState(actor) : "Esperando la próxima ronda.");
-        SetText(roundText, $"Ronda {TankGame.CurrentRound} — {PhotonFeedbackText.Phase(TankGame.Phase)}");
-        SetText(objectivesText, $"Botones activados: {TankGame.ActivatedButtonCount}/2 | Props vivos: {TankGame.AlivePropCount}");
-        SetText(instructionText, TankGame.CanLocalPlayerActivateButtons() ? "W/S o flechas: mover. A/D: girar. E: activar un botón cercano." : TankGame.CanLocalPlayerShoot() ? "W/S o flechas: mover. A/D: girar. Espacio: disparar." : "");
-        SetText(resultText, TankGame.Phase == GamePhase.Finished ? PhotonFeedbackText.Result(TankGame.WinnerTeam, TankGame.EndReason) : "");
+        bool participant = PropHuntGame.IsParticipant(actor);
+        bool hunter = PropHuntGame.TryGetShooterActorNumber(out int hunterActor) && actor == hunterActor;
+        SetText(roleText, participant ? "Rol: " + (hunter ? "Cazador" : "Prop") + " — " + PropHuntGame.GetPlayerState(actor) : "Esperando la próxima ronda.");
+        SetText(roundText, $"Ronda {PropHuntGame.CurrentRound} — {PhotonFeedbackText.Phase(PropHuntGame.Phase)}");
+        SetText(objectivesText, $"Botones activados: {PropHuntGame.ActivatedButtonCount}/2 | Props vivos: {PropHuntGame.AlivePropCount}");
+        SetText(instructionText, PropHuntGame.CanLocalPlayerActivateButtons() ? "W/S o flechas: mover. A/D: girar. E: activar un botón cercano." : PropHuntGame.CanLocalPlayerShoot() ? "W/S o flechas: mover. A/D: girar. Espacio: disparar." : "");
+        SetText(resultText, PropHuntGame.Phase == GamePhase.Finished ? PhotonFeedbackText.Result(PropHuntGame.WinnerTeam, PropHuntGame.EndReason) : "");
     }
 
     private string RecoveryText()
@@ -210,9 +210,9 @@ public sealed class PhotonRoomBrowserGUI : MonoBehaviour
         if (!PhotonNetwork.InRoom)
             return "";
         var text = new StringBuilder();
-        foreach (int actor in TankGame.Participants())
+        foreach (int actor in PropHuntGame.Participants())
         {
-            double remaining = TankGame.ReconnectDeadline(actor) - PhotonNetwork.Time;
+            double remaining = PropHuntGame.ReconnectDeadline(actor) - PhotonNetwork.Time;
             if (remaining > 0d)
                 text.AppendLine($"{roomBrowser.PlayerName(actor)}: puede regresar durante {remaining:F0} s.");
         }

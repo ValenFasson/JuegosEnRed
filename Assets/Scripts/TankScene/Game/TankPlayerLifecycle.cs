@@ -2,7 +2,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
-using static TankGame;
+using static PropHuntGame;
 
 // Owns the local avatar and player recovery; TankGame decides round transitions.
 internal sealed class TankPlayerLifecycle
@@ -85,7 +85,7 @@ internal sealed class TankPlayerLifecycle
     internal void UpdateLocalPlayer()
     {
         if (!PhotonNetwork.InRoom || ReadInt(ProtocolKey) != PropHuntRoundRules.Protocol ||
-            TankGame.Instance == null || TankGame.Instance.ConfigurationError != null ||
+            PropHuntGame.Instance == null || PropHuntGame.Instance.ConfigurationError != null ||
             Phase == GamePhase.Waiting || Phase == GamePhase.Finished)
             return;
         int actor = PhotonNetwork.LocalPlayer.ActorNumber;

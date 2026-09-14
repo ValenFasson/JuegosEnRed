@@ -226,11 +226,11 @@ public sealed class PhotonRoomBrowser : MonoBehaviourPunCallbacks
             playerFeedback.Remember(player.ActorNumber, player.NickName);
         ObserveRoomFeedback(false);
         SetStatus($"Estás en '{PhotonNetwork.CurrentRoom.Name}'.", PhotonProcessState.InRoom);
-        if (recovered && TankGame.IsParticipant(PhotonNetwork.LocalPlayer.ActorNumber) &&
-            TankGame.GetPlayerState(PhotonNetwork.LocalPlayer.ActorNumber) == PropHuntPlayerState.Alive &&
-            TankGame.Phase != GamePhase.Finished)
+        if (recovered && PropHuntGame.IsParticipant(PhotonNetwork.LocalPlayer.ActorNumber) &&
+            PropHuntGame.GetPlayerState(PhotonNetwork.LocalPlayer.ActorNumber) == PropHuntPlayerState.Alive &&
+            PropHuntGame.Phase != GamePhase.Finished)
             Notify("Recuperaste la conexión. Preparando tu regreso a la partida.");
-        else if (TankGame.Phase != GamePhase.Waiting && !TankGame.IsParticipant(PhotonNetwork.LocalPlayer.ActorNumber))
+        else if (PropHuntGame.Phase != GamePhase.Waiting && !PropHuntGame.IsParticipant(PhotonNetwork.LocalPlayer.ActorNumber))
             Notify($"Entraste a '{PhotonNetwork.CurrentRoom.Name}'. Esperá la próxima ronda para jugar.");
         else
             Notify($"Entraste a '{PhotonNetwork.CurrentRoom.Name}'.");
@@ -561,7 +561,7 @@ public sealed class PhotonRoomBrowser : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.InRoom || !(PhotonNetwork.CurrentRoom.CustomProperties["phase"] is int phaseValue))
             return;
         bool hadSnapshot = observedPhase.HasValue;
-        int round = TankGame.CurrentRound;
+        int round = PropHuntGame.CurrentRound;
         GamePhase phase = (GamePhase)phaseValue;
         if (observedRound != round)
         {
@@ -578,9 +578,9 @@ public sealed class PhotonRoomBrowser : MonoBehaviourPunCallbacks
                 // A cancelled hunter round retains the old actor state in gameplay properties.
                 // Interpret the confirmed cancellation consistently on every snapshot.
                 PropHuntPlayerState state = phase == GamePhase.Finished &&
-                    TankGame.EndReason == "HunterDisconnected" &&
-                    TankGame.TryGetShooterActorNumber(out int hunterActor) && actor == hunterActor
-                    ? PropHuntPlayerState.Abandoned : TankGame.GetPlayerState(actor);
+                    PropHuntGame.EndReason == "HunterDisconnected" &&
+                    PropHuntGame.TryGetShooterActorNumber(out int hunterActor) && actor == hunterActor
+                    ? PropHuntPlayerState.Abandoned : PropHuntGame.GetPlayerState(actor);
                 Notify(playerFeedback.ObserveState(actor, state, announce && hadSnapshot),
                     state == PropHuntPlayerState.Abandoned ? PhotonFeedbackSeverity.Warning : PhotonFeedbackSeverity.Info);
             }
@@ -592,7 +592,7 @@ public sealed class PhotonRoomBrowser : MonoBehaviourPunCallbacks
         {
             if (announce && hadSnapshot)
             {
-                Notify(PhotonFeedbackText.Result(TankGame.WinnerTeam, TankGame.EndReason));
+                Notify(PhotonFeedbackText.Result(PropHuntGame.WinnerTeam, PropHuntGame.EndReason));
             }
             observedResult = true;
         }

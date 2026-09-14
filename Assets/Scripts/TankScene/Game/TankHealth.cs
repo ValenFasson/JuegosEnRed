@@ -1,7 +1,7 @@
 using Photon.Pun;
 using UnityEngine;
 
-// Presentation of the durable player state. Only TankGame's Master resolves an impact.
+// Presentation of the durable player state. Only PropHuntGame's Master resolves an impact.
 public class TankHealth : MonoBehaviourPunCallbacks
 {
     private TankController tank;
@@ -21,7 +21,7 @@ public class TankHealth : MonoBehaviourPunCallbacks
 
     private void ApplyState()
     {
-        bool visible = PhotonNetwork.InRoom && tank != null && tank.RoundId == TankGame.CurrentRound && TankGame.IsParticipant(tank.ActorNumber) && TankGame.GetPlayerState(tank.ActorNumber) == PropHuntPlayerState.Alive;
+        bool visible = PhotonNetwork.InRoom && tank != null && tank.RoundId == PropHuntGame.CurrentRound && PropHuntGame.IsParticipant(tank.ActorNumber) && PropHuntGame.GetPlayerState(tank.ActorNumber) == PropHuntPlayerState.Alive;
         foreach (Renderer item in renderers)
             item.enabled = visible;
         foreach (Collider item in colliders)

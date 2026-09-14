@@ -6,7 +6,7 @@ using Photon.Realtime;
 using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-public class TankGame : MonoBehaviourPunCallbacks
+public class PropHuntGame : MonoBehaviourPunCallbacks
 {
     public const string ReadyRoundKey = "readyRound";
     public const string ReadyTokenKey = "readyToken";
@@ -37,7 +37,7 @@ public class TankGame : MonoBehaviourPunCallbacks
     private float nextPoseCheckpoint;
     private float authorityResumeAt;
 
-    public static TankGame Instance { get; private set; }
+    public static PropHuntGame Instance { get; private set; }
     public string LastNetworkMessage { get; private set; }
     public string ConfigurationError { get; private set; }
     public static int CurrentRound => ReadInt(RoundKey);

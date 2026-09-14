@@ -10,7 +10,7 @@ public sealed class PhotonLocalValidation : MonoBehaviour
 {
     public const string FixedRoom = "Sala 1";
     public const string FixedRegion = "sa";
-    public const string EditorLogEnvironment = "TANKGAME_VALIDATION_EDITOR_LOG";
+    public const string EditorLogEnvironment = "PropHuntGame_VALIDATION_EDITOR_LOG";
     public static bool Active { get; private set; }
     public static string ClientLabel { get; private set; }
     public static string LogPath { get; private set; }
@@ -56,7 +56,7 @@ public sealed class PhotonLocalValidation : MonoBehaviour
             return;
         Application.runInBackground = true;
         PhotonNetwork.NickName = ClientLabel;
-        var host = new GameObject("TankGame Local Validation");
+        var host = new GameObject("PropHuntGame Local Validation");
         DontDestroyOnLoad(host);
         host.AddComponent<PhotonLocalValidation>();
     }
@@ -114,18 +114,18 @@ public sealed class PhotonLocalValidation : MonoBehaviour
             text.AppendLine($"Reconnect attempts: {browser.ReconnectAttempts} | Window: {PropHuntRoundRules.RecoveryWindowSeconds:0}s | Target: {browser.RecoveryRoom ?? "none"} | Last disconnect: {browser.LastDisconnectCause?.ToString() ?? "none"}");
             text.AppendLine(browser.StatusMessage);
         }
-        if (TankGame.Instance != null && !string.IsNullOrEmpty(TankGame.Instance.ConfigurationError))
-            text.AppendLine("CONFIGURATION ERROR: " + TankGame.Instance.ConfigurationError);
+        if (PropHuntGame.Instance != null && !string.IsNullOrEmpty(PropHuntGame.Instance.ConfigurationError))
+            text.AppendLine("CONFIGURATION ERROR: " + PropHuntGame.Instance.ConfigurationError);
         if (!PhotonNetwork.InRoom)
         {
             text.Append("Round / Master / hunter / phase / player states: unavailable (outside room)");
             return text.ToString();
         }
         Room room = PhotonNetwork.CurrentRoom;
-        TankGame.TryGetShooterActorNumber(out int hunter);
+        PropHuntGame.TryGetShooterActorNumber(out int hunter);
         text.AppendLine($"Room: {room.Name} | Players: {room.PlayerCount}/{room.MaxPlayers} | Local: #{PhotonNetwork.LocalPlayer.ActorNumber}");
-        text.AppendLine($"Round: {TankGame.CurrentRound} | Revision: {TankGame.ReadInt("revision")} | Phase: {TankGame.Phase}");
-        text.AppendLine($"Master: #{room.MasterClientId} | Hunter: {(hunter > 0 ? "#" + hunter : "pending")} | Alive props: {TankGame.AlivePropCount}");
+        text.AppendLine($"Round: {PropHuntGame.CurrentRound} | Revision: {PropHuntGame.ReadInt("revision")} | Phase: {PropHuntGame.Phase}");
+        text.AppendLine($"Master: #{room.MasterClientId} | Hunter: {(hunter > 0 ? "#" + hunter : "pending")} | Alive props: {PropHuntGame.AlivePropCount}");
         // Include missing participants as well as retained inactive actors.
         var actors = new System.Collections.Generic.SortedSet<int>(room.Players.Keys);
         if (room.CustomProperties["participants"] is int[] participants)
@@ -134,18 +134,18 @@ public sealed class PhotonLocalValidation : MonoBehaviour
         foreach (int actor in actors)
         {
             Player player = room.GetPlayer(actor);
-            bool participant = TankGame.IsParticipant(actor);
-            string state = participant ? TankGame.GetPlayerState(actor).ToString() : "waiting";
+            bool participant = PropHuntGame.IsParticipant(actor);
+            string state = participant ? PropHuntGame.GetPlayerState(actor).ToString() : "waiting";
             string connection = player == null ? "missing" : player.IsInactive ? "inactive" : "active";
-            int readyRound = player != null && player.CustomProperties[TankGame.ReadyRoundKey] is int rr ? rr : 0;
-            int readyToken = player != null && player.CustomProperties[TankGame.ReadyTokenKey] is int rt ? rt : -1;
+            int readyRound = player != null && player.CustomProperties[PropHuntGame.ReadyRoundKey] is int rr ? rr : 0;
+            int readyToken = player != null && player.CustomProperties[PropHuntGame.ReadyTokenKey] is int rt ? rt : -1;
             text.AppendLine($"#{actor} {player?.NickName} {(actor == hunter ? "hunter" : participant ? "prop" : "unassigned")} | {state} | {connection}");
-            text.AppendLine($"  Ready round/token: {readyRound}/{readyToken} | Recovery token: {TankGame.RecoveryToken(actor)} | Reconnect deadline: {TankGame.ReconnectDeadline(actor):F3}");
-            double deadline = TankGame.ReconnectDeadline(actor);
+            text.AppendLine($"  Ready round/token: {readyRound}/{readyToken} | Recovery token: {PropHuntGame.RecoveryToken(actor)} | Reconnect deadline: {PropHuntGame.ReconnectDeadline(actor):F3}");
+            double deadline = PropHuntGame.ReconnectDeadline(actor);
             if (includeCountdown && deadline > 0d)
                 text.AppendLine($"  Reconnect grace remaining: {Math.Max(0d, deadline - PhotonNetwork.Time):F1}s");
         }
-        text.Append($"Winner: {TankGame.WinnerTeam} | End reason: {TankGame.EndReason}");
+        text.Append($"Winner: {PropHuntGame.WinnerTeam} | End reason: {PropHuntGame.EndReason}");
         return text.ToString();
     }
 

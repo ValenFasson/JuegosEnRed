@@ -4,7 +4,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using UnityEngine;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
-using static TankGame;
+using static PropHuntGame;
 
 // Accepted shots remain durable so a replacement Master can finish spawning them.
 internal sealed class TankShotSystem
@@ -12,11 +12,11 @@ internal sealed class TankShotSystem
     internal const string LastShotKey = "lastShot";
     internal const string NextFireKey = "nextFireAt";
     private const string ShotPrefix = "shot_";
-    private readonly TankGame game;
+    private readonly PropHuntGame game;
     private readonly Dictionary<int, GameObject> requestedProjectiles =
         new Dictionary<int, GameObject>();
 
-    internal TankShotSystem(TankGame game) => this.game = game;
+    internal TankShotSystem(PropHuntGame game) => this.game = game;
     internal void Reset() => requestedProjectiles.Clear();
 
     internal void OnPropertiesChanged(Hashtable changed)

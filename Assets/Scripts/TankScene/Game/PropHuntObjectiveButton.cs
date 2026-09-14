@@ -48,7 +48,7 @@ public sealed class PropHuntObjectiveButton : MonoBehaviour
         float distance = (float)(PropHuntRoundRules.ButtonActivationRange * PropHuntRoundRules.ButtonActivationRange);
         foreach (PropHuntObjectiveButton button in Buttons)
         {
-            if (button == null || TankGame.IsButtonActivated(button.buttonId))
+            if (button == null || PropHuntGame.IsButtonActivated(button.buttonId))
                 continue;
             float candidate = (position - button.transform.position).sqrMagnitude;
             if (candidate <= distance)
@@ -62,7 +62,7 @@ public sealed class PropHuntObjectiveButton : MonoBehaviour
 
     private void Update()
     {
-        bool activated = TankGame.IsButtonActivated(buttonId);
+        bool activated = PropHuntGame.IsButtonActivated(buttonId);
         if (displayedActivation == activated)
             return;
         displayedActivation = activated;
