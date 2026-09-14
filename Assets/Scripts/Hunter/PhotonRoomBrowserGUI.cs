@@ -55,7 +55,9 @@ public sealed class PhotonRoomBrowserGUI :
 
     private void Start()
     {
-        if (roomManager == null)
+        // Al recargar Lobby, la referencia de escena puede apuntar al duplicado
+        // que Awake destruye. Usar siempre el manager persistente activo.
+        if (PropHuntRoomManager.Instance != null)
         {
             roomManager =
                 PropHuntRoomManager.Instance;

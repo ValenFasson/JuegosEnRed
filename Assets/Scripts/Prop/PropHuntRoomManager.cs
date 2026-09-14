@@ -6,8 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
-public sealed class PropHuntRoomManager :
-    MonoBehaviourPunCallbacks
+public sealed class PropHuntRoomManager :MonoBehaviourPunCallbacks
 {
     public static PropHuntRoomManager Instance
     {
@@ -29,6 +28,9 @@ public sealed class PropHuntRoomManager :
 
     [Header("Scene")]
     [SerializeField] private string gameSceneName = "Game";
+    [SerializeField] private string lobbySceneName = "Lobby";
+
+    public bool IsReturningToLobby { get; private set; }
 
     private readonly Dictionary<string, RoomInfo> rooms =
         new Dictionary<string, RoomInfo>(
@@ -260,6 +262,52 @@ public sealed class PropHuntRoomManager :
         }
     }
 
+    public bool ReturnToLobby()
+    {
+        if (IsReturningToLobby)
+            return true;
+
+        if (!Application.CanStreamedLevelBeLoaded(lobbySceneName))
+        {
+            SetStatus(
+                "La escena de lobby no está habilitada en Build Settings.",
+                PhotonFeedbackSeverity.Error
+            );
+            return false;
+        }
+
+        IsReturningToLobby = true;
+        SetStatus("Saliendo de la room para volver al lobby...");
+
+        if (!PhotonNetwork.InRoom)
+        {
+            LoadLobbyScene();
+            Connect();
+            return true;
+        }
+
+        // Abandonar la room, incluso si permite jugadores inactivos/reconexión.
+        if (PhotonNetwork.LeaveRoom(false))
+            return true;
+
+        IsReturningToLobby = false;
+        SetStatus("No se pudo salir de la room. Intentá nuevamente.",
+            PhotonFeedbackSeverity.Error);
+        return false;
+    }
+
+    private void LoadLobbyScene()
+    {
+        IsReturningToLobby = false;
+        roomRequestPending = false;
+        rooms.Clear();
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        // Carga local después de salir: no cambia la escena de la room anterior.
+        SceneManager.LoadScene(lobbySceneName);
+    }
+
     public void LeaveRoom()
     {
         if (!PhotonNetwork.InRoom)
@@ -455,6 +503,11 @@ public sealed class PropHuntRoomManager :
         SetStatus(
             "Volviendo al Lobby..."
         );
+
+        if (IsReturningToLobby)
+            LoadLobbyScene();
+
+        // Photon regresa al Master Server y OnConnectedToMaster entra al lobby.
     }
 
     public override void OnJoinRoomFailed(
@@ -511,6 +564,9 @@ public sealed class PropHuntRoomManager :
             ),
             PhotonFeedbackSeverity.Error
         );
+
+        if (IsReturningToLobby)
+            LoadLobbyScene();
     }
 
     // --------------------------------------------------
