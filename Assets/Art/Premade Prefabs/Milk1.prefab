@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 6090067168019990424}
   - component: {fileID: 7145972668323776573}
   - component: {fileID: 4958303820880166135}
-  - component: {fileID: 1125440579571475597}
   m_Layer: 0
   m_Name: Milk1
   m_TagString: Untagged
@@ -104,28 +103,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!64 &1125440579571475597
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6903898924141616418}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -4417284452157709687, guid: 95cc2a6335cea8246b76bb24b6c4476e, type: 3}
 --- !u!1001 &172047584351755259
 PrefabInstance:
   m_ObjectHideFlags: 0
