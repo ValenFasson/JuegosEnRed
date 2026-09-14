@@ -40,6 +40,11 @@ MonoBehaviour:
   - Fire
   - RespawnSpaceship
   - RpcTakeDamage
+  - RpcRequestShoot
+  - RpcRequestActivateButton
+  - RpcEliminate
+  - RpcSetScale
+  - RpcSetVariant
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 0
