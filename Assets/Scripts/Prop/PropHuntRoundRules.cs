@@ -2,7 +2,7 @@ using System;
 
 public static class PropHuntRoundRules
 {
-    public const int RequiredPlayers = 4;
+    public const int RequiredPlayers = 2;
 
     public const int RequiredButtons = 5;
     public const int ButtonSpawnCount = 20;
