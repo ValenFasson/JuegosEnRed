@@ -1076,8 +1076,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 320.0593, y: -0.0025177002}
-  m_SizeDelta: {x: 1688.118, y: 1047.6}
+  m_AnchoredPosition: {x: 200, y: 0}
+  m_SizeDelta: {x: 1500, y: 1047.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &167513706
 MonoBehaviour:
@@ -5766,7 +5766,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 320.06, y: -0.0054016}
+  m_AnchoredPosition: {x: 320.06, y: 0}
   m_SizeDelta: {x: 1688.1, y: 1047.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &872212524
@@ -9841,8 +9841,8 @@ Camera:
   m_GameObject: {fileID: 1838700115}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.3962264, g: 0.22334053, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -11764,6 +11764,7 @@ MonoBehaviour:
   connectOnStart: 1
   gameVersion: 0.1
   gameSceneName: Game
+  lobbySceneName: Lobby
 --- !u!4 &2128121778
 Transform:
   m_ObjectHideFlags: 0

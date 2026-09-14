@@ -60,6 +60,9 @@ public sealed class PropHuntGameManager :
     [SerializeField] private GameObject buttonPrefab;
     [SerializeField] private Transform[] buttonSpawnPoints;
 
+    [Header("Results UI")]
+    [SerializeField] private PropHuntResultUI resultUI;
+
     private GameObject localPlayerInstance;
 
     private NetworkPropController localPropController;
@@ -89,6 +92,12 @@ public sealed class PropHuntGameManager :
 
         spawnedButtons =
             new PropHuntObjectiveButton[ObjectiveCount];
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Start()
@@ -323,8 +332,7 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase ==
-            GamePhase.Finished)
+        if (CurrentPhase == GamePhase.Finished || winner == GameWinner.None)
         {
             return;
         }
@@ -341,7 +349,9 @@ public sealed class PropHuntGameManager :
                         WinnerKey,
                         (int)winner
                     }
-                }
+                },
+                // El primer resultado confirmado no puede ser sobrescrito.
+                new Hashtable { { PhaseKey, (int)CurrentPhase } }
             );
     }
 
@@ -393,6 +403,9 @@ public sealed class PropHuntGameManager :
         TrySpawnLocalPlayer();
 
         ApplyLocalPlayerState();
+
+        if (resultUI != null)
+            resultUI.ShowResult(CurrentPhase, Winner);
 
         if (CurrentPhase ==
                 GamePhase.Playing ||
@@ -561,6 +574,21 @@ public sealed class PropHuntGameManager :
 
     private void ApplyLocalPlayerState()
     {
+        if (CurrentPhase == GamePhase.Finished && localPlayerInstance != null)
+        {
+            NetworkFirstPersonController hunterController =
+                localPlayerInstance.GetComponent<NetworkFirstPersonController>();
+            PlayerGun gun = localPlayerInstance.GetComponent<PlayerGun>();
+            Rigidbody body = localPlayerInstance.GetComponent<Rigidbody>();
+
+            if (hunterController != null)
+                hunterController.enabled = false;
+            if (gun != null)
+                gun.enabled = false;
+            if (body != null)
+                body.isKinematic = true;
+        }
+
         // -------------------------------
         // PROP
         // -------------------------------
