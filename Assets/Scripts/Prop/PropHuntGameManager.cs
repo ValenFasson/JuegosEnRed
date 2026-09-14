@@ -19,9 +19,11 @@ public sealed class PropHuntGameManager :
 
     public const string AliveKey = "alive";
 
-    private const int RequiredPlayers = 4;
-    private const int ObjectiveCount = 5;
-    private const double HideDuration = 45.0;
+    private const int ObjectiveCount =
+        PropHuntRoundRules.RequiredButtons;
+
+    private const double HideDuration =
+        PropHuntRoundRules.HideDurationSeconds;
 
     private const string PhaseKey = "phase";
     private const string HunterActorKey = "hunter";
@@ -105,26 +107,18 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
+        // Una vez que la escena Game fue cargada,
+        // la partida puede comenzar con cualquier
+        // cantidad de jugadores presentes.
         if (!PhotonNetwork.CurrentRoom
             .CustomProperties
             .ContainsKey(PhaseKey))
         {
-            if (PhotonNetwork.CurrentRoom.PlayerCount ==
-                RequiredPlayers)
-            {
-                StartHidingPhase();
-            }
-            else
-            {
-                SetWaitingPhase();
-            }
-
+            StartHidingPhase();
             return;
         }
 
-        if (CurrentPhase == GamePhase.Waiting &&
-            PhotonNetwork.CurrentRoom.PlayerCount ==
-            RequiredPlayers)
+        if (CurrentPhase == GamePhase.Waiting)
         {
             StartHidingPhase();
         }
@@ -138,18 +132,21 @@ public sealed class PropHuntGameManager :
         int remaining =
             GetRemainingHideSeconds();
 
+        // UI del Hunter.
         if (localHunterUI != null)
         {
             localHunterUI.SetHideSeconds(
                 remaining
             );
+        }
 
-            if (localPropUI != null)
-            {
-                localPropUI.SetHideSeconds(
-                    remaining
-                );
-            }
+        // UI del Prop.
+        // IMPORTANTE: no debe depender de localHunterUI.
+        if (localPropUI != null)
+        {
+            localPropUI.SetHideSeconds(
+                remaining
+            );
         }
 
         if (!PhotonNetwork.IsMasterClient)
@@ -161,36 +158,23 @@ public sealed class PropHuntGameManager :
         }
     }
 
-    private void SetWaitingPhase()
-    {
-        PhotonNetwork.CurrentRoom.SetCustomProperties(
-            new Hashtable
-            {
-                {
-                    PhaseKey,
-                    (int)GamePhase.Waiting
-                },
-                {
-                    WinnerKey,
-                    (int)GameWinner.None
-                }
-            }
-        );
-    }
-
     private void StartHidingPhase()
     {
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (PhotonNetwork.CurrentRoom.PlayerCount !=
-            RequiredPlayers)
-        {
-            return;
-        }
-
         Player[] players =
             PhotonNetwork.PlayerList;
+
+        if (players == null ||
+            players.Length == 0)
+        {
+            Debug.LogError(
+                "No hay jugadores en la Room."
+            );
+
+            return;
+        }
 
         Player selectedHunter =
             players[
@@ -201,7 +185,8 @@ public sealed class PropHuntGameManager :
             ];
 
         double endTime =
-            PhotonNetwork.Time + HideDuration;
+            PhotonNetwork.Time +
+            HideDuration;
 
         Hashtable properties =
             new Hashtable
@@ -224,17 +209,36 @@ public sealed class PropHuntGameManager :
                 }
             };
 
-        for (int i = 0; i < ObjectiveCount; i++)
+        for (int i = 0;
+             i < ObjectiveCount;
+             i++)
         {
-            properties[ButtonSlotKeys[i]] = -1;
-            properties[ButtonUsedKeys[i]] = false;
+            properties[
+                ButtonSlotKeys[i]
+            ] = -1;
+
+            properties[
+                ButtonUsedKeys[i]
+            ] = false;
         }
 
-        PhotonNetwork.CurrentRoom.IsOpen = false;
-        PhotonNetwork.CurrentRoom.IsVisible = false;
+        // Una vez iniciada la partida,
+        // no entran jugadores nuevos.
+        PhotonNetwork.CurrentRoom.IsOpen =
+            false;
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(
-            properties
+        PhotonNetwork.CurrentRoom.IsVisible =
+            false;
+
+        PhotonNetwork.CurrentRoom
+            .SetCustomProperties(
+                properties
+            );
+
+        Debug.Log(
+            $"[PropHunt] Comenzando partida con " +
+            $"{players.Length} jugador(es). " +
+            $"Hunter: Actor {selectedHunter.ActorNumber}"
         );
     }
 
@@ -243,11 +247,15 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase != GamePhase.Hiding)
+        if (CurrentPhase !=
+            GamePhase.Hiding)
+        {
             return;
+        }
 
         if (buttonSpawnPoints == null ||
-            buttonSpawnPoints.Length < ObjectiveCount)
+            buttonSpawnPoints.Length <
+            ObjectiveCount)
         {
             Debug.LogError(
                 "Se necesitan al menos 5 ButtonSpawnPoints."
@@ -275,7 +283,9 @@ public sealed class PropHuntGameManager :
                 }
             };
 
-        for (int i = 0; i < ObjectiveCount; i++)
+        for (int i = 0;
+             i < ObjectiveCount;
+             i++)
         {
             int randomListIndex =
                 UnityEngine.Random.Range(
@@ -284,7 +294,9 @@ public sealed class PropHuntGameManager :
                 );
 
             int selectedSlot =
-                availableSlots[randomListIndex];
+                availableSlots[
+                    randomListIndex
+                ];
 
             availableSlots.RemoveAt(
                 randomListIndex
@@ -299,9 +311,10 @@ public sealed class PropHuntGameManager :
             ] = false;
         }
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(
-            properties
-        );
+        PhotonNetwork.CurrentRoom
+            .SetCustomProperties(
+                properties
+            );
     }
 
     private void FinishGame(
@@ -310,60 +323,81 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase == GamePhase.Finished)
+        if (CurrentPhase ==
+            GamePhase.Finished)
+        {
             return;
+        }
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(
-            new Hashtable
-            {
+        PhotonNetwork.CurrentRoom
+            .SetCustomProperties(
+                new Hashtable
                 {
-                    PhaseKey,
-                    (int)GamePhase.Finished
-                },
-                {
-                    WinnerKey,
-                    (int)winner
+                    {
+                        PhaseKey,
+                        (int)GamePhase.Finished
+                    },
+                    {
+                        WinnerKey,
+                        (int)winner
+                    }
                 }
-            }
-        );
+            );
     }
 
     private void ApplyRoomState()
     {
-        Hashtable properties =
-            PhotonNetwork.CurrentRoom.CustomProperties;
+        if (!PhotonNetwork.InRoom)
+            return;
 
-        if (properties.ContainsKey(PhaseKey))
+        Hashtable properties =
+            PhotonNetwork.CurrentRoom
+                .CustomProperties;
+
+        if (properties.ContainsKey(
+            PhaseKey))
         {
             CurrentPhase =
-                (GamePhase)(int)properties[PhaseKey];
+                (GamePhase)(int)
+                    properties[PhaseKey];
         }
 
-        if (properties.ContainsKey(HunterActorKey))
+        if (properties.ContainsKey(
+            HunterActorKey))
         {
             hunterActor =
-                (int)properties[HunterActorKey];
+                (int)properties[
+                    HunterActorKey
+                ];
         }
 
-        if (properties.ContainsKey(HideEndKey))
+        if (properties.ContainsKey(
+            HideEndKey))
         {
             hideEndTime =
                 Convert.ToDouble(
-                    properties[HideEndKey]
+                    properties[
+                        HideEndKey
+                    ]
                 );
         }
 
-        if (properties.ContainsKey(WinnerKey))
+        if (properties.ContainsKey(
+            WinnerKey))
         {
             Winner =
-                (GameWinner)(int)properties[WinnerKey];
+                (GameWinner)(int)
+                    properties[WinnerKey];
         }
 
         TrySpawnLocalPlayer();
+
         ApplyLocalPlayerState();
 
-        if (CurrentPhase == GamePhase.Playing ||
-            CurrentPhase == GamePhase.Finished)
+        if (CurrentPhase ==
+                GamePhase.Playing ||
+            CurrentPhase ==
+                GamePhase.Finished)
         {
             SetupButtons();
         }
@@ -374,14 +408,19 @@ public sealed class PropHuntGameManager :
         if (localPlayerInstance != null)
             return;
 
-        if (CurrentPhase == GamePhase.Waiting)
+        // Todavía no hay rol asignado.
+        if (CurrentPhase ==
+            GamePhase.Waiting)
+        {
             return;
+        }
 
         if (hunterActor <= 0)
             return;
 
         bool isHunter =
-            PhotonNetwork.LocalPlayer.ActorNumber ==
+            PhotonNetwork.LocalPlayer
+                .ActorNumber ==
             hunterActor;
 
         GameObject prefab =
@@ -420,13 +459,33 @@ public sealed class PropHuntGameManager :
                 rotation
             );
 
+        if (localPlayerInstance == null)
+        {
+            Debug.LogError(
+                "No se pudo crear el jugador local."
+            );
+
+            return;
+        }
+
         if (isHunter)
         {
             localHunterUI =
                 localPlayerInstance
-                    .GetComponentInChildren<
+                    .GetComponent<
                         HunterRoundUI
-                    >(true);
+                    >();
+
+            if (localHunterUI == null)
+            {
+                Debug.LogWarning(
+                    "El prefab Hunter no tiene HunterRoundUI en el root."
+                );
+            }
+
+            Debug.Log(
+                "[PropHunt] Jugador local creado como Hunter."
+            );
         }
         else
         {
@@ -437,7 +496,10 @@ public sealed class PropHuntGameManager :
                     >();
 
             localPropUI =
-    localPlayerInstance.GetComponentInChildren<PropRoundUI>(true);
+                localPlayerInstance
+                    .GetComponentInChildren<
+                        PropRoundUI
+                    >(true);
 
             PhotonNetwork.LocalPlayer
                 .SetCustomProperties(
@@ -449,11 +511,21 @@ public sealed class PropHuntGameManager :
                         }
                     }
                 );
+
+            Debug.Log(
+                "[PropHunt] Jugador local creado como Prop."
+            );
         }
     }
 
     private Transform GetLocalPropSpawn()
     {
+        if (propSpawns == null ||
+            propSpawns.Length == 0)
+        {
+            return null;
+        }
+
         int propIndex = 0;
 
         foreach (Player player in
@@ -475,12 +547,6 @@ public sealed class PropHuntGameManager :
             propIndex++;
         }
 
-        if (propSpawns == null ||
-            propSpawns.Length == 0)
-        {
-            return null;
-        }
-
         propIndex =
             Mathf.Clamp(
                 propIndex,
@@ -488,81 +554,80 @@ public sealed class PropHuntGameManager :
                 propSpawns.Length - 1
             );
 
-        return propSpawns[propIndex];
+        return propSpawns[
+            propIndex
+        ];
     }
 
     private void ApplyLocalPlayerState()
     {
-        if (localPropController != null)
-        {
-            localPropController.SetCanScale(
-                CurrentPhase ==
-                GamePhase.Hiding
-            );
-
-            if (CurrentPhase ==
-                GamePhase.Finished)
-            {
-                localPropController.enabled = false;
-            }
-        }
-
-        if (localHunterUI == null)
-            return;
-
-        switch (CurrentPhase)
-        {
-            case GamePhase.Hiding:
-
-                localHunterUI.SetHiding(
-                    GetRemainingHideSeconds()
-                );
-
-                break;
-
-            case GamePhase.Playing:
-
-                localHunterUI.SetPlaying(
-                    GetRemainingButtons()
-                );
-
-                break;
-
-            case GamePhase.Finished:
-
-                localHunterUI.SetFinished();
-
-                break;
-        }
-
+        // -------------------------------
+        // PROP
+        // -------------------------------
 
         if (localPropController != null)
         {
             bool hiding =
-                CurrentPhase == GamePhase.Hiding;
+                CurrentPhase ==
+                GamePhase.Hiding;
 
-            localPropController.SetCanScale(
-                hiding
-            );
-
-            if (localPropUI != null)
-            {
-                if (hiding)
-                {
-                    localPropUI.SetHiding(
-                        GetRemainingHideSeconds()
-                    );
-                }
-                else
-                {
-                    localPropUI.Hide();
-                }
-            }
+            localPropController
+                .SetCanScale(
+                    hiding
+                );
 
             if (CurrentPhase ==
                 GamePhase.Finished)
             {
-                localPropController.enabled = false;
+                localPropController.enabled =
+                    false;
+            }
+        }
+
+        if (localPropUI != null)
+        {
+            if (CurrentPhase ==
+                GamePhase.Hiding)
+            {
+                localPropUI.SetHiding(
+                    GetRemainingHideSeconds()
+                );
+            }
+            else
+            {
+                localPropUI.Hide();
+            }
+        }
+
+        // -------------------------------
+        // HUNTER
+        // -------------------------------
+
+        if (localHunterUI != null)
+        {
+            switch (CurrentPhase)
+            {
+                case GamePhase.Hiding:
+
+                    localHunterUI.SetHiding(
+                        GetRemainingHideSeconds()
+                    );
+
+                    break;
+
+                case GamePhase.Playing:
+
+                    localHunterUI.SetPlaying(
+                        GetRemainingButtons()
+                    );
+
+                    break;
+
+                case GamePhase.Finished:
+
+                    localHunterUI.SetFinished();
+
+                    break;
             }
         }
     }
@@ -570,7 +635,8 @@ public sealed class PropHuntGameManager :
     private int GetRemainingHideSeconds()
     {
         double remaining =
-            hideEndTime - PhotonNetwork.Time;
+            hideEndTime -
+            PhotonNetwork.Time;
 
         return Mathf.Max(
             0,
@@ -588,7 +654,9 @@ public sealed class PropHuntGameManager :
             return;
         }
 
-        for (int i = 0; i < ObjectiveCount; i++)
+        for (int i = 0;
+             i < ObjectiveCount;
+             i++)
         {
             int slot =
                 GetRoomInt(
@@ -597,7 +665,8 @@ public sealed class PropHuntGameManager :
                 );
 
             if (slot < 0 ||
-                slot >= buttonSpawnPoints.Length)
+                slot >=
+                buttonSpawnPoints.Length)
             {
                 continue;
             }
@@ -605,7 +674,9 @@ public sealed class PropHuntGameManager :
             if (spawnedButtons[i] == null)
             {
                 Transform spawn =
-                    buttonSpawnPoints[slot];
+                    buttonSpawnPoints[
+                        slot
+                    ];
 
                 GameObject button =
                     Instantiate(
@@ -623,7 +694,8 @@ public sealed class PropHuntGameManager :
                 {
                     script.Initialize(i);
 
-                    spawnedButtons[i] = script;
+                    spawnedButtons[i] =
+                        script;
                 }
             }
 
@@ -636,33 +708,43 @@ public sealed class PropHuntGameManager :
                     );
 
                 spawnedButtons[i]
-                    .SetActivated(used);
+                    .SetActivated(
+                        used
+                    );
             }
         }
 
         if (localHunterUI != null &&
-            CurrentPhase == GamePhase.Playing)
+            CurrentPhase ==
+            GamePhase.Playing)
         {
-            localHunterUI.SetObjectivesRemaining(
-                GetRemainingButtons()
-            );
+            localHunterUI
+                .SetObjectivesRemaining(
+                    GetRemainingButtons()
+                );
         }
     }
 
     public void RequestActivateButton(
         int objectiveIndex)
     {
-        if (CurrentPhase != GamePhase.Playing)
+        if (CurrentPhase !=
+            GamePhase.Playing)
+        {
             return;
+        }
 
-        if (PhotonNetwork.LocalPlayer.ActorNumber ==
+        if (PhotonNetwork.LocalPlayer
+                .ActorNumber ==
             hunterActor)
         {
             return;
         }
 
         photonView.RPC(
-            nameof(RpcRequestActivateButton),
+            nameof(
+                RpcRequestActivateButton
+            ),
             RpcTarget.MasterClient,
             objectiveIndex
         );
@@ -676,11 +758,15 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase != GamePhase.Playing)
+        if (CurrentPhase !=
+            GamePhase.Playing)
+        {
             return;
+        }
 
         if (objectiveIndex < 0 ||
-            objectiveIndex >= ObjectiveCount)
+            objectiveIndex >=
+            ObjectiveCount)
         {
             return;
         }
@@ -691,34 +777,42 @@ public sealed class PropHuntGameManager :
             return;
         }
 
-        if (!IsPlayerAlive(info.Sender))
+        if (!IsPlayerAlive(
+            info.Sender))
+        {
             return;
+        }
 
         if (GetRoomBool(
-            ButtonUsedKeys[objectiveIndex],
+            ButtonUsedKeys[
+                objectiveIndex
+            ],
             false))
         {
             return;
         }
 
-        PhotonNetwork.CurrentRoom.SetCustomProperties(
-            new Hashtable
-            {
+        PhotonNetwork.CurrentRoom
+            .SetCustomProperties(
+                new Hashtable
                 {
-                    ButtonUsedKeys[
-                        objectiveIndex
-                    ],
-                    true
+                    {
+                        ButtonUsedKeys[
+                            objectiveIndex
+                        ],
+                        true
+                    }
                 }
-            }
-        );
+            );
     }
 
     private int GetRemainingButtons()
     {
         int remaining = 0;
 
-        for (int i = 0; i < ObjectiveCount; i++)
+        for (int i = 0;
+             i < ObjectiveCount;
+             i++)
         {
             if (!GetRoomBool(
                 ButtonUsedKeys[i],
@@ -736,8 +830,11 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase != GamePhase.Playing)
+        if (CurrentPhase !=
+            GamePhase.Playing)
+        {
             return;
+        }
 
         if (GetRemainingButtons() == 0)
         {
@@ -752,8 +849,10 @@ public sealed class PropHuntGameManager :
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase != GamePhase.Hiding &&
-            CurrentPhase != GamePhase.Playing)
+        if (CurrentPhase !=
+                GamePhase.Hiding &&
+            CurrentPhase !=
+                GamePhase.Playing)
         {
             return;
         }
@@ -804,8 +903,11 @@ public sealed class PropHuntGameManager :
             PhotonNetwork.CurrentRoom
                 .CustomProperties;
 
-        if (!properties.ContainsKey(key))
+        if (!properties.ContainsKey(
+            key))
+        {
             return defaultValue;
+        }
 
         return (int)properties[key];
     }
@@ -818,48 +920,60 @@ public sealed class PropHuntGameManager :
             PhotonNetwork.CurrentRoom
                 .CustomProperties;
 
-        if (!properties.ContainsKey(key))
+        if (!properties.ContainsKey(
+            key))
+        {
             return defaultValue;
+        }
 
         return (bool)properties[key];
     }
 
-    public override void OnRoomPropertiesUpdate(
-        Hashtable propertiesThatChanged)
+    public override void
+        OnRoomPropertiesUpdate(
+            Hashtable propertiesThatChanged)
     {
         ApplyRoomState();
 
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase == GamePhase.Playing)
+        if (CurrentPhase ==
+            GamePhase.Playing)
         {
             CheckPropsWin();
             CheckHunterWin();
         }
     }
 
-    public override void OnPlayerPropertiesUpdate(
-        Player targetPlayer,
-        Hashtable changedProps)
+    public override void
+        OnPlayerPropertiesUpdate(
+            Player targetPlayer,
+            Hashtable changedProps)
     {
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (!changedProps.ContainsKey(AliveKey))
+        if (!changedProps.ContainsKey(
+            AliveKey))
+        {
             return;
+        }
 
         CheckHunterWin();
     }
 
-    public override void OnPlayerLeftRoom(
-        Player otherPlayer)
+    public override void
+        OnPlayerLeftRoom(
+            Player otherPlayer)
     {
         if (!PhotonNetwork.IsMasterClient)
             return;
 
-        if (CurrentPhase != GamePhase.Hiding &&
-            CurrentPhase != GamePhase.Playing)
+        if (CurrentPhase !=
+                GamePhase.Hiding &&
+            CurrentPhase !=
+                GamePhase.Playing)
         {
             return;
         }
@@ -877,21 +991,25 @@ public sealed class PropHuntGameManager :
         CheckHunterWin();
     }
 
-    public override void OnMasterClientSwitched(
-        Player newMasterClient)
+    public override void
+        OnMasterClientSwitched(
+            Player newMasterClient)
     {
         if (!PhotonNetwork.IsMasterClient)
             return;
 
         ApplyRoomState();
 
-        if (CurrentPhase == GamePhase.Hiding &&
-            PhotonNetwork.Time >= hideEndTime)
+        if (CurrentPhase ==
+                GamePhase.Hiding &&
+            PhotonNetwork.Time >=
+                hideEndTime)
         {
             StartPlayingPhase();
         }
 
-        if (CurrentPhase == GamePhase.Playing)
+        if (CurrentPhase ==
+            GamePhase.Playing)
         {
             CheckPropsWin();
             CheckHunterWin();

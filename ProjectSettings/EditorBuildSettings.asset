@@ -10,7 +10,7 @@ EditorBuildSettings:
     guid: 5f0deb5e3deef794f9b102e6e205d895
   - enabled: 1
     path: Assets/Scenes/PropHuntGame/Game.unity
-    guid: a329b07838a19dd4386be74fea419530
+    guid: 509f6fc5c7c78114eb77e6f5aef3daa9
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
