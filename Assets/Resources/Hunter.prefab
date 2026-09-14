@@ -516,9 +516,9 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 1.5558095
+  m_Height: 1.5312387
   m_Direction: 1
-  m_Center: {x: 0, y: 0.22209509, z: 0}
+  m_Center: {x: 0, y: 0.23437971, z: 0}
 --- !u!54 &765256443568440644
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -1311,6 +1311,7 @@ GameObject:
   - component: {fileID: 1023908791170315704}
   - component: {fileID: 6354698565804712527}
   - component: {fileID: 7949756218855685038}
+  - component: {fileID: 6885418605678385714}
   m_Layer: 0
   m_Name: HunterCam
   m_TagString: Untagged
@@ -1437,6 +1438,20 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &6885418605678385714
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8892823650827108135}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2064dcf734ccb1e42a0d73a05a5b9705, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCamera
+  _playerCamera: {fileID: 1023908791170315704}
+  _audioListener: {fileID: 6354698565804712527}
 --- !u!1 &9051087140457307556
 GameObject:
   m_ObjectHideFlags: 0
