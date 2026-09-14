@@ -950,7 +950,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: acd3808a5d3a1234a972becf034c4ef0, type: 3}
       propertyPath: m_Name
-      value: Bottle_5
+      value: Bottle3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1000,7 +1000,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: acd3808a5d3a1234a972becf034c4ef0, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3520904384544512420}
+      addedObject: {fileID: 7904760047011324143}
   m_SourcePrefab: {fileID: 100100000, guid: acd3808a5d3a1234a972becf034c4ef0, type: 3}
 --- !u!4 &6973650254141064494 stripped
 Transform:
@@ -1012,8 +1012,8 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: acd3808a5d3a1234a972becf034c4ef0, type: 3}
   m_PrefabInstance: {fileID: 7443843838669054661}
   m_PrefabAsset: {fileID: 0}
---- !u!64 &3520904384544512420
-MeshCollider:
+--- !u!65 &7904760047011324143
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1030,10 +1030,9 @@ MeshCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 474569660798320067, guid: acd3808a5d3a1234a972becf034c4ef0, type: 3}
+  serializedVersion: 3
+  m_Size: {x: 0.13874023, y: 0.43642592, z: 0.14624146}
+  m_Center: {x: 0.0000060275197, y: 0.21821296, z: 0.0037481673}
 --- !u!1001 &7549801509028066145
 PrefabInstance:
   m_ObjectHideFlags: 0
