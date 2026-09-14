@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 using Photon.Pun;
 using Photon.Realtime;
@@ -7,46 +5,48 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public sealed class PhotonRoomBrowserGUI :
-    MonoBehaviourPunCallbacks
+    MonoBehaviour
 {
-    [Serializable]
-    private sealed class RoomSlotUI
-    {
-        public Text label;
-        public Button joinButton;
-
-        [NonSerialized]
-        public string roomName;
-    }
-
     [Header("Services")]
-    [SerializeField] private PropHuntRoomManager roomManager;
+    [SerializeField]
+    private PropHuntRoomManager roomManager;
 
     [Header("Status")]
-    [SerializeField] private Text titleText;
-    [SerializeField] private Text statusText;
-    [SerializeField] private Button connectButton;
-
-    private float statusHoldUntil;
-    [Header("Lobby")]
-    [SerializeField] private GameObject lobbyPanel;
-
-    [SerializeField] private Text nicknameText;
-    [SerializeField] private InputField nicknameInput;
-    [SerializeField] private Button renameButton;
-
-    [SerializeField] private InputField roomNameInput;
-    [SerializeField] private Button createRoomButton;
+    [SerializeField]
+    private Text titleText;
 
     [SerializeField]
-    private RoomSlotUI[] roomSlots =
-        new RoomSlotUI[0];
+    private Text statusText;
+
+    [SerializeField]
+    private Button connectButton;
+
+    [Header("Lobby")]
+    [SerializeField]
+    private GameObject lobbyPanel;
+
+    [SerializeField]
+    private Text nicknameText;
+
+    [SerializeField]
+    private InputField nicknameInput;
+
+    [SerializeField]
+    private Button renameButton;
+
+    [SerializeField]
+    private RoomSlot[] roomSlots =
+        new RoomSlot[4];
 
     [Header("Current Room")]
-    [SerializeField] private GameObject currentRoomPanel;
+    [SerializeField]
+    private GameObject currentRoomPanel;
 
-    [SerializeField] private Text roomText;
-    [SerializeField] private Button leaveButton;
+    [SerializeField]
+    private Text roomText;
+
+    [SerializeField]
+    private Button leaveButton;
 
     private float nextRefreshTime;
 
@@ -61,7 +61,8 @@ public sealed class PhotonRoomBrowserGUI :
         if (roomManager == null)
         {
             Debug.LogError(
-                "No se encontró PropHuntRoomManager.",
+                "PhotonRoomBrowserGUI: " +
+                "no se encontró PropHuntRoomManager.",
                 this
             );
 
@@ -70,6 +71,8 @@ public sealed class PhotonRoomBrowserGUI :
         }
 
         EnsureNickname();
+
+        ConfigureRoomButtons();
 
         Refresh();
     }
@@ -83,13 +86,13 @@ public sealed class PhotonRoomBrowserGUI :
         }
 
         nextRefreshTime =
-            Time.unscaledTime + 0.25f;
+            Time.unscaledTime + 0.2f;
 
         Refresh();
     }
 
     // --------------------------------------------------
-    // BOTONES UI
+    // CONNECTION
     // --------------------------------------------------
 
     public void Connect()
@@ -97,55 +100,41 @@ public sealed class PhotonRoomBrowserGUI :
         if (roomManager == null)
             return;
 
-        SetStatus(
-            "Conectando con Photon..."
-        );
-
         roomManager.Connect();
     }
 
-    public void CreateRoom()
+    // --------------------------------------------------
+    // ROOM BUTTONS
+    // --------------------------------------------------
+
+    private void ConfigureRoomButtons()
     {
-        if (roomManager == null ||
-            roomNameInput == null)
+        foreach (RoomSlot slot in roomSlots)
         {
-            return;
+            if (slot == null)
+                continue;
+
+            if (slot.joinButton == null)
+                continue;
+
+            string roomName =
+                slot.roomName;
+
+            slot.joinButton
+                .onClick
+                .AddListener(
+                    () => JoinRoom(roomName)
+                );
         }
-
-        string roomName =
-            roomNameInput.text.Trim();
-
-        if (string.IsNullOrEmpty(roomName))
-        {
-            SetStatus(
-                "Escribí un nombre para la sala."
-            );
-
-            return;
-        }
-
-        SetStatus(
-            $"Creando sala '{roomName}'..."
-        );
-
-        roomManager.CreateRoom(
-            roomName
-        );
     }
 
-    public void JoinRoom(string roomName)
+    public void JoinRoom(
+        string roomName)
     {
         if (roomManager == null)
             return;
 
-        if (string.IsNullOrEmpty(roomName))
-            return;
-
-        SetStatus(
-            $"Entrando a '{roomName}'..."
-        );
-
-        roomManager.JoinRoom(
+        roomManager.JoinOrCreateRoom(
             roomName
         );
     }
@@ -158,10 +147,20 @@ public sealed class PhotonRoomBrowserGUI :
         roomManager.LeaveRoom();
     }
 
+    // --------------------------------------------------
+    // NICKNAME
+    // --------------------------------------------------
+
     public void ChangeNickname()
     {
         if (nicknameInput == null)
             return;
+
+        if (roomManager == null ||
+            !roomManager.CanUseLobby)
+        {
+            return;
+        }
 
         string newName =
             nicknameInput.text
@@ -169,12 +168,8 @@ public sealed class PhotonRoomBrowserGUI :
                 .Replace("\n", "")
                 .Replace("\r", "");
 
-        if (string.IsNullOrEmpty(newName))
+        if (string.IsNullOrWhiteSpace(newName))
         {
-            SetStatus(
-                "Escribí un nombre para tu jugador."
-            );
-
             return;
         }
 
@@ -197,119 +192,54 @@ public sealed class PhotonRoomBrowserGUI :
         Refresh();
     }
 
-    // --------------------------------------------------
-    // PHOTON CALLBACKS
-    // --------------------------------------------------
-
-    public override void OnConnectedToMaster()
+    private void EnsureNickname()
     {
-        SetStatus(
-            "Conectado a Photon."
-        );
+        if (!string.IsNullOrWhiteSpace(
+            PhotonNetwork.NickName))
+        {
+            return;
+        }
 
-        Refresh();
-    }
+        PhotonNetwork.NickName =
+            $"Jugador{Random.Range(1000, 9999)}";
 
-    public override void OnJoinedLobby()
-    {
-        SetStatus(
-            "Lobby conectado. Elegí o creá una sala."
-        );
-
-        Refresh();
-    }
-
-    public override void OnJoinedRoom()
-    {
-        SetStatus(
-            "Entraste a la sala."
-        );
-
-        Refresh();
-    }
-
-    public override void OnLeftRoom()
-    {
-        SetStatus(
-            "Saliste de la sala."
-        );
-
-        Refresh();
-    }
-
-    public override void OnPlayerEnteredRoom(
-        Player newPlayer)
-    {
-        Refresh();
-    }
-
-    public override void OnPlayerLeftRoom(
-        Player otherPlayer)
-    {
-        Refresh();
-    }
-
-    public override void OnRoomListUpdate(
-        List<RoomInfo> roomList)
-    {
-        Refresh();
-    }
-
-    public override void OnJoinRoomFailed(
-        short returnCode,
-        string message)
-    {
-        SetTemporaryStatus(
-            PhotonFeedbackText.RoomError(
-                returnCode
-            )
-        );
-
-        Refresh();
-    }
-
-    public override void OnCreateRoomFailed(
-        short returnCode,
-        string message)
-    {
-        SetTemporaryStatus(
-            PhotonFeedbackText.RoomError(
-                returnCode
-            )
-        );
-
-        Refresh();
-    }
-
-    public override void OnDisconnected(
-       DisconnectCause cause)
-    {
-        SetTemporaryStatus(
-            PhotonFeedbackText.Disconnect(
-                cause
-            ),
-            6f
-        );
-
-        Refresh();
+        if (nicknameInput != null)
+        {
+            nicknameInput.SetTextWithoutNotify(
+                PhotonNetwork.NickName
+            );
+        }
     }
 
     // --------------------------------------------------
-    // ACTUALIZAR UI
+    // REFRESH
     // --------------------------------------------------
 
     private void Refresh()
     {
+        if (roomManager == null)
+            return;
+
+        bool inRoom =
+            PhotonNetwork.InRoom;
+
         SetText(
             titleText,
             "Prop Hunt"
         );
 
-        bool inRoom =
-            PhotonNetwork.InRoom;
+        SetText(
+            statusText,
+            roomManager.StatusMessage
+        );
 
-        bool inLobby =
-            PhotonNetwork.InLobby;
+        if (statusText != null)
+        {
+            statusText.color =
+                SeverityColor(
+                    roomManager.StatusSeverity
+                );
+        }
 
         SetActive(
             lobbyPanel,
@@ -323,201 +253,129 @@ public sealed class PhotonRoomBrowserGUI :
 
         SetText(
             nicknameText,
-            $"Jugador: {PhotonNetwork.NickName}"
+            "Jugador: " +
+            PhotonNetwork.NickName
         );
 
-        if (nicknameInput != null &&
-            !nicknameInput.isFocused)
-        {
-            nicknameInput.SetTextWithoutNotify(
-                PhotonNetwork.NickName
-            );
-        }
+        RefreshConnectionControls();
 
+        RefreshRoomSlots();
+
+        if (inRoom)
+        {
+            RefreshCurrentRoom();
+        }
+    }
+
+    private void RefreshConnectionControls()
+    {
         if (connectButton != null)
         {
             connectButton.interactable =
                 !PhotonNetwork.IsConnected;
         }
 
-        if (renameButton != null)
-        {
-            renameButton.interactable =
-                inLobby;
-        }
+        bool canUseLobby =
+            roomManager.CanUseLobby;
 
         if (nicknameInput != null)
         {
             nicknameInput.interactable =
-                inLobby;
+                canUseLobby;
 
             nicknameInput.characterLimit =
                 32;
         }
 
-        if (roomNameInput != null)
+        if (renameButton != null)
         {
-            roomNameInput.interactable =
-                inLobby;
-        }
-
-        if (createRoomButton != null)
-        {
-            createRoomButton.interactable =
-                inLobby;
+            renameButton.interactable =
+                canUseLobby;
         }
 
         if (leaveButton != null)
         {
             leaveButton.interactable =
-                inRoom;
+                PhotonNetwork.InRoom;
         }
-
-        if (inLobby)
-        {
-            RefreshRoomList();
-        }
-
-        if (inRoom)
-        {
-            RefreshCurrentRoom();
-        }
-
-        RefreshConnectionStatus();
     }
 
-    private void RefreshRoomList()
+    private void RefreshRoomSlots()
     {
-        List<RoomInfo> availableRooms =
-            new List<RoomInfo>();
-
-        foreach (RoomInfo room in
-                 roomManager.Rooms)
+        foreach (RoomSlot slot in roomSlots)
         {
-            if (room == null)
-                continue;
-
-            if (room.RemovedFromList)
-                continue;
-
-            availableRooms.Add(
-                room
-            );
-        }
-
-        availableRooms.Sort(
-            (a, b) =>
-                string.Compare(
-                    a.Name,
-                    b.Name,
-                    StringComparison.OrdinalIgnoreCase
-                )
-        );
-
-        for (int i = 0;
-             i < roomSlots.Length;
-             i++)
-        {
-            RoomSlotUI slot =
-                roomSlots[i];
-
             if (slot == null)
                 continue;
 
-            if (i >=
-                availableRooms.Count)
+            if (string.IsNullOrWhiteSpace(
+                slot.roomName))
             {
-                ClearRoomSlot(
-                    slot
+                continue;
+            }
+
+            bool known =
+                roomManager.TryGetRoomInfo(
+                    slot.roomName,
+                    out RoomInfo info
+                );
+
+            if (!known)
+            {
+                SetText(
+                    slot.label,
+                    $"{slot.roomName} - 0/" +
+                    $"{PropHuntRoundRules.RequiredPlayers}"
+                );
+
+                SetInteractable(
+                    slot.joinButton,
+                    roomManager.CanUseLobby
                 );
 
                 continue;
             }
 
-            RoomInfo info =
-                availableRooms[i];
+            string suffix = "";
 
-            SetupRoomSlot(
-                slot,
-                info
-            );
-        }
-    }
+            if (!info.IsOpen)
+            {
+                suffix = " - Cerrada";
+            }
+            else if (
+                info.MaxPlayers > 0 &&
+                info.PlayerCount >=
+                info.MaxPlayers)
+            {
+                suffix = " - Llena";
+            }
 
-    private void SetupRoomSlot(
-        RoomSlotUI slot,
-        RoomInfo info)
-    {
-        slot.roomName =
-            info.Name;
+            int maxPlayers =
+                info.MaxPlayers > 0
+                    ? info.MaxPlayers
+                    : PropHuntRoundRules
+                        .RequiredPlayers;
 
-        string state = "";
-
-        if (!info.IsOpen)
-        {
-            state = " - Cerrada";
-        }
-        else if (info.MaxPlayers > 0 &&
-                 info.PlayerCount >=
-                 info.MaxPlayers)
-        {
-            state = " - Llena";
-        }
-
-        SetText(
-            slot.label,
-            $"{info.Name} - " +
-            $"{info.PlayerCount}/" +
-            $"{info.MaxPlayers}" +
-            state
-        );
-
-        if (slot.joinButton == null)
-            return;
-
-        bool canEnter =
-            PropHuntRoundRules.CanEnterRoom(
-                info.IsOpen,
-                info.PlayerCount,
-                info.MaxPlayers
+            SetText(
+                slot.label,
+                $"{slot.roomName} - " +
+                $"{info.PlayerCount}/" +
+                $"{maxPlayers}" +
+                suffix
             );
 
-        slot.joinButton.interactable =
-            canEnter;
+            bool canEnter =
+                roomManager.CanUseLobby &&
+                PropHuntRoundRules.CanEnterRoom(
+                    info.IsOpen,
+                    info.PlayerCount,
+                    info.MaxPlayers
+                );
 
-        slot.joinButton
-            .onClick
-            .RemoveAllListeners();
-
-        string roomName =
-            info.Name;
-
-        slot.joinButton
-            .onClick
-            .AddListener(
-                () => JoinRoom(roomName)
+            SetInteractable(
+                slot.joinButton,
+                canEnter
             );
-    }
-
-    private void ClearRoomSlot(
-        RoomSlotUI slot)
-    {
-        slot.roomName = null;
-
-        SetText(
-            slot.label,
-            "Sala disponible"
-        );
-
-        if (slot.joinButton == null)
-            return;
-
-        slot.joinButton.interactable =
-            false;
-
-        slot.joinButton
-            .onClick
-            .RemoveAllListeners();
+        }
     }
 
     private void RefreshCurrentRoom()
@@ -532,6 +390,8 @@ public sealed class PhotonRoomBrowserGUI :
             PhotonNetwork.CurrentRoom.Name
         );
 
+        text.AppendLine();
+
         text.AppendLine(
             $"{PhotonNetwork.CurrentRoom.PlayerCount}/" +
             $"{PropHuntRoundRules.RequiredPlayers} jugadores"
@@ -544,8 +404,7 @@ public sealed class PhotonRoomBrowserGUI :
         {
             string playerName =
                 string.IsNullOrWhiteSpace(
-                    player.NickName
-                )
+                    player.NickName)
                     ? $"Jugador {player.ActorNumber}"
                     : player.NickName;
 
@@ -577,7 +436,7 @@ public sealed class PhotonRoomBrowserGUI :
         else
         {
             text.Append(
-                "Comenzando partida..."
+                "Iniciando partida..."
             );
         }
 
@@ -587,87 +446,32 @@ public sealed class PhotonRoomBrowserGUI :
         );
     }
 
-    private void SetTemporaryStatus(
-    string message,
-    float duration = 4f)
-    {
-        statusHoldUntil =
-            Time.unscaledTime + duration;
-
-        SetStatus(message);
-    }
-
-    private void RefreshConnectionStatus()
-    {
-        // No pisa mensajes de error importantes
-        // mientras Photon todavía se está conectando.
-
-        if (Time.unscaledTime <
-    statusHoldUntil)
-        {
-            return;
-        }
-
-        if (PhotonNetwork.InRoom)
-        {
-            SetStatus(
-                PhotonFeedbackText.WaitingPlayers(
-                    PhotonNetwork.CurrentRoom.PlayerCount
-                )
-            );
-
-            return;
-        }
-
-        if (PhotonNetwork.InLobby)
-        {
-            SetStatus(
-                "Lobby conectado. Elegí o creá una sala."
-            );
-
-            return;
-        }
-
-        if (PhotonNetwork.IsConnectedAndReady)
-        {
-            SetStatus(
-                "Conectado a Photon."
-            );
-
-            return;
-        }
-
-        if (PhotonNetwork.IsConnected)
-        {
-            SetStatus(
-                "Conectando..."
-            );
-        }
-    }
-
-    private void EnsureNickname()
-    {
-        if (!string.IsNullOrWhiteSpace(
-            PhotonNetwork.NickName))
-        {
-            return;
-        }
-
-        PhotonNetwork.NickName =
-            $"Jugador{UnityEngine.Random.Range(1000, 9999)}";
-    }
-
     // --------------------------------------------------
-    // HELPERS UI
+    // HELPERS
     // --------------------------------------------------
 
-    private void SetStatus(
-        string message)
+    private static Color SeverityColor(
+        PhotonFeedbackSeverity severity)
     {
-        SetText(
-            statusText,
-            message
-        );
+        switch (severity)
+        {
+            case PhotonFeedbackSeverity.Error:
+                return new Color(
+                    1f,
+                    0.35f,
+                    0.35f
+                );
+
+            case PhotonFeedbackSeverity.Warning:
+                return new Color(
+                    1f,
+                    0.8f,
+                    0.3f
+                );
+
+            default:
+                return Color.white;
+        }
     }
 
     private static void SetText(
@@ -693,21 +497,25 @@ public sealed class PhotonRoomBrowserGUI :
             finalValue;
     }
 
+    private static void SetInteractable(
+        Selectable target,
+        bool value)
+    {
+        if (target != null)
+        {
+            target.interactable =
+                value;
+        }
+    }
+
     private static void SetActive(
         GameObject target,
         bool value)
     {
-        if (target == null)
-            return;
-
-        if (target.activeSelf ==
-            value)
+        if (target != null &&
+            target.activeSelf != value)
         {
-            return;
+            target.SetActive(value);
         }
-
-        target.SetActive(
-            value
-        );
     }
 }

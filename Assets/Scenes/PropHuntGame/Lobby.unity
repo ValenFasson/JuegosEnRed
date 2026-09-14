@@ -1619,7 +1619,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b854b9465fa409ea40c46300387c214, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomManager: {fileID: 0}
+  roomManager: {fileID: 2128121777}
   titleText: {fileID: 1778369854}
   statusText: {fileID: 1898970248}
   connectButton: {fileID: 18924941}
@@ -1627,8 +1627,6 @@ MonoBehaviour:
   nicknameText: {fileID: 278597597}
   nicknameInput: {fileID: 1552246394}
   renameButton: {fileID: 1590841360}
-  roomNameInput: {fileID: 1552246394}
-  createRoomButton: {fileID: 0}
   roomSlots: []
   currentRoomPanel: {fileID: 1455307987}
   roomText: {fileID: 1815794652}
