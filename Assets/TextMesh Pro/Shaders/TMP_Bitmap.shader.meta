@@ -7,3 +7,10 @@ ShaderImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 275183
+  packageName: Hand Drawn UI Pack
+  packageVersion: 
+  assetPath: Assets/TextMesh Pro/Shaders/TMP_Bitmap.shader
+  uploadId: 0
