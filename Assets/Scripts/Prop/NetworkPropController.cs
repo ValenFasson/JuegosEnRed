@@ -1,11 +1,13 @@
 using Photon.Pun;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
-using Unity.Services.Core;
 using Unity.Services.Authentication;
+using Unity.Services.Core;
 using Unity.Services.RemoteConfig;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(Rigidbody))]
 public sealed class NetworkPropController : MonoBehaviourPun
@@ -70,12 +72,8 @@ public sealed class NetworkPropController : MonoBehaviourPun
         if (!IsLocalPlayer)
         {
             return;
-
-            _ = LoadRemoteSpeed();
-
-            Cursor.lockState = CursorLockMode.Locked;
-
         }
+        _ = LoadRemoteSpeed();
 
         if (playerCamera != null)
         {
