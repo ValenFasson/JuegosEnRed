@@ -1,4 +1,9 @@
 using Photon.Pun;
+using System;
+using System.Threading.Tasks;
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+using Unity.Services.RemoteConfig;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -33,6 +38,9 @@ public sealed class NetworkPropController : MonoBehaviourPun
     private bool canScale;
     private bool rotationLocked;
 
+    public struct UserAttributes { }
+    public struct AppAttributes { }
+
     private bool IsLocalPlayer
     {
         get
@@ -58,6 +66,16 @@ public sealed class NetworkPropController : MonoBehaviourPun
 
         body.constraints =
             RigidbodyConstraints.FreezeRotation;
+
+        if (!IsLocalPlayer)
+        {
+            return;
+
+            _ = LoadRemoteSpeed();
+
+            Cursor.lockState = CursorLockMode.Locked;
+
+        }
 
         if (playerCamera != null)
         {
@@ -301,6 +319,40 @@ public sealed class NetworkPropController : MonoBehaviourPun
             ~0,
             QueryTriggerInteraction.Ignore
         );
+    }
+
+    private async Task LoadRemoteSpeed()
+    {
+        try
+        {
+            await UnityServices.InitializeAsync();
+
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance
+                    .SignInAnonymouslyAsync();
+            }
+
+            var config = await RemoteConfigService.Instance
+                .FetchConfigsAsync(
+                    new UserAttributes(),
+                    new AppAttributes()
+                );
+
+            moveSpeed = Mathf.Clamp(
+                config.GetFloat("PropSpeed", moveSpeed),
+                1f,
+                15f
+            );
+
+            Debug.Log($"Velocidad remota del Prop: {moveSpeed}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(
+                $"No se pudo cargar Remote Config: {e.Message}"
+            );
+        }
     }
 
     // El futuro sistema de partida usa esto.
