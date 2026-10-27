@@ -1,11 +1,27 @@
 using Photon.Pun;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Threading;
+    using Unity.Services.RemoteConfig;
+using Unity.Services.Authentication;
+using Unity.Services;
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(CapsuleCollider))]
 public sealed class NetworkFirstPersonController : MonoBehaviourPun
 {
+
+    // Scripts para live ops =>
+    public struct userAttributes
+    {
+        public float moveSpeed;
+    } 
+
+    public struct appAttributes 
+    {
+        public float moveSpeed;
+    }
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
