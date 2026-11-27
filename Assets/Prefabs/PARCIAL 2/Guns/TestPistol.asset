@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8c1106d01aa421a9e4e9c02450e01ea, type: 3}
+  m_Name: TestPistol
+  m_EditorClassIdentifier: Assembly-CSharp::GunDefinition
+  gunName: Test Pistol
+  type: 0
+  icon: {fileID: 0}
+  fireMode: 0
+  cadenceSeconds: 0.25
+  range: 60
+  projectilesPerShot: 1
+  baseDamage: 25
+  headshotMultiplier: 2
+  magazineSize: 12
+  maxReserveAmmo: 24
+  reloadTime: 1.5
+  equipTime: 0.25
+  recoil: {x: 0, y: 0}
+  aimMovementMultiplier: 0.8
+  prefab: {fileID: 0}
+  firstPersonPosition: {x: 0, y: 0, z: 0}
+  muzzlePoint: {fileID: 0}
+  animations:
+    Idle: {fileID: 0}
+    Fire: {fileID: 0}
+    Reload: {fileID: 0}
+    Equip: {fileID: 0}
+  audio:
+    Shot: {fileID: 0}
+    Reload: {fileID: 0}
+    Equip: {fileID: 0}
+    Empty: {fileID: 0}
+  effects:
+    Muzzle: {fileID: 0}
+    Impact: {fileID: 0}
+    Tracer: {fileID: 0}
