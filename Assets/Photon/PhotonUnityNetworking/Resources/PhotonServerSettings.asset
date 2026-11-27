@@ -48,6 +48,10 @@ MonoBehaviour:
   - RpcSetVisual
   - RequestAnswerRpc
   - RequestBuzzRpc
+  - RpcRequestReload
+  - RpcRequestShot
+  - RpcSetHealth
+  - RpcSetOwnerAmmo
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 0

@@ -27,9 +27,9 @@ MonoBehaviour:
   equipTime: 0.25
   recoil: {x: 0, y: 0}
   aimMovementMultiplier: 0.8
-  prefab: {fileID: 0}
+  prefab: {fileID: 4774474569652399940, guid: 5d8fd5575ebca144c9c820ef2322e23e, type: 3}
   firstPersonPosition: {x: 0, y: 0, z: 0}
-  muzzlePoint: {fileID: 0}
+  muzzlePoint: {fileID: 7473645424477262611, guid: 5d8fd5575ebca144c9c820ef2322e23e, type: 3}
   animations:
     Idle: {fileID: 0}
     Fire: {fileID: 0}
