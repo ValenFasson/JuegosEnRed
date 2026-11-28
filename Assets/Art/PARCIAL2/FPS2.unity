@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 5072c671f5d9f4003a83241b424bb0f0, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -6022,6 +6022,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1311435436}
     m_Modifications:
+    - target: {fileID: 605757909146441703, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.77
+      objectReference: {fileID: 0}
+    - target: {fileID: 605757909146441703, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.94
+      objectReference: {fileID: 0}
+    - target: {fileID: 875152641277015908, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.27400336
+      objectReference: {fileID: 0}
+    - target: {fileID: 875152641277015908, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.9489992
+      objectReference: {fileID: 0}
+    - target: {fileID: 2672953165454633569, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.04399872
+      objectReference: {fileID: 0}
+    - target: {fileID: 2672953165454633569, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.5529995
+      objectReference: {fileID: 0}
     - target: {fileID: 4774436034613698327, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
       propertyPath: m_Name
       value: Box_Stack
@@ -6065,6 +6089,14 @@ PrefabInstance:
     - target: {fileID: 8319470332722750466, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9082291381680101493, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.35
+      objectReference: {fileID: 0}
+    - target: {fileID: 9082291381680101493, guid: a97f6ae263a84ef4f80f3b765b1b00cd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.32
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10920,6 +10952,7 @@ GameObject:
   - component: {fileID: 2065496075}
   - component: {fileID: 2065496074}
   - component: {fileID: 2065496073}
+  - component: {fileID: 2065496076}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -11001,6 +11034,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2065496076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2065496072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1001 &2084142431
 PrefabInstance:
   m_ObjectHideFlags: 0
